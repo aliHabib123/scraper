@@ -1,0 +1,227 @@
+import logging
+from typing import List, Dict, Optional
+from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
+from models import Forum, Keyword, Match
+from .base_crawler import BaseCrawler
+from parsers.base_parser import BaseParser
+
+logger = logging.getLogger(__name__)
+
+
+class ForumCrawler:
+    """Main crawler for monitoring forums for keyword mentions."""
+    
+    def __init__(self, db_session: Session, parser: BaseParser, rate_limit: float = 2.0):
+        """
+        Initialize forum crawler.
+        
+        Args:
+            db_session: SQLAlchemy database session
+            parser: Forum-specific parser instance
+            rate_limit: Minimum seconds between requests
+        """
+        self.db_session = db_session
+        self.parser = parser
+        self.crawler = BaseCrawler(rate_limit=rate_limit)
+    
+    def crawl_forum(self, forum: Forum, keywords: List[Keyword]) -> Dict[str, int]:
+        """
+        Crawl a forum for all keywords.
+        
+        Args:
+            forum: Forum object to crawl
+            keywords: List of Keyword objects to search for
+            
+        Returns:
+            Dict with statistics (matches_found, pages_crawled, errors)
+        """
+        stats = {
+            'matches_found': 0,
+            'pages_crawled': 0,
+            'errors': 0
+        }
+        
+        if not keywords:
+            logger.warning(f"No keywords to search for in forum: {forum.name}")
+            return stats
+        
+        logger.info(f"Starting crawl of forum: {forum.name}")
+        logger.info(f"Searching for {len(keywords)} keywords")
+        
+        try:
+            # Get thread URLs from start_urls
+            thread_urls = []
+            for start_url in forum.start_urls:
+                logger.info(f"Processing start URL: {start_url}")
+                urls = self._crawl_category_pages(start_url, forum.max_pages)
+                thread_urls.extend(urls)
+                stats['pages_crawled'] += len(urls)
+            
+            logger.info(f"Found {len(thread_urls)} thread URLs")
+            
+            # Process each thread
+            for thread_url in thread_urls:
+                matches = self._process_thread(forum, thread_url, keywords)
+                stats['matches_found'] += len(matches)
+                
+        except Exception as e:
+            logger.error(f"Error crawling forum {forum.name}: {str(e)}")
+            stats['errors'] += 1
+        
+        logger.info(f"Finished crawling {forum.name}: {stats}")
+        return stats
+    
+    def _crawl_category_pages(self, start_url: str, max_pages: int) -> List[str]:
+        """
+        Crawl category pages to extract thread URLs.
+        
+        Args:
+            start_url: Starting category URL
+            max_pages: Maximum pages to crawl
+            
+        Returns:
+            List of thread URLs
+        """
+        thread_urls = []
+        
+        for page_num in range(1, max_pages + 1):
+            try:
+                # Get paginated URL
+                page_url = self.parser.get_paginated_url(start_url, page_num)
+                
+                # Fetch page
+                soup = self.crawler.fetch_page(page_url)
+                if not soup:
+                    logger.warning(f"Failed to fetch category page: {page_url}")
+                    break
+                
+                # Extract thread URLs
+                urls = self.parser.extract_thread_urls(soup, start_url)
+                if not urls:
+                    logger.info(f"No more threads found at page {page_num}")
+                    break
+                
+                thread_urls.extend(urls)
+                logger.info(f"Page {page_num}: Found {len(urls)} threads")
+                
+            except Exception as e:
+                logger.error(f"Error crawling category page {page_num}: {str(e)}")
+                break
+        
+        return thread_urls
+    
+    def _process_thread(self, forum: Forum, thread_url: str, keywords: List[Keyword]) -> List[Match]:
+        """
+        Process a thread and check for keyword matches.
+        
+        Args:
+            forum: Forum object
+            thread_url: Thread URL to process
+            keywords: Keywords to search for
+            
+        Returns:
+            List of Match objects created
+        """
+        matches = []
+        
+        try:
+            # Fetch thread page
+            soup = self.crawler.fetch_page(thread_url)
+            if not soup:
+                return matches
+            
+            # Extract thread content
+            thread_data = self.parser.extract_thread_content(soup)
+            if not thread_data:
+                return matches
+            
+            # Combine title and content for searching
+            searchable_text = f"{thread_data['title']} {thread_data['content']}".lower()
+            
+            # Check each keyword
+            for keyword in keywords:
+                if keyword.keyword.lower() in searchable_text:
+                    # Create snippet (extract context around keyword)
+                    snippet = self._create_snippet(searchable_text, keyword.keyword.lower())
+                    
+                    # Save match to database
+                    match = self._save_match(forum, keyword, thread_url, snippet)
+                    if match:
+                        matches.append(match)
+                        logger.info(f"Match found: '{keyword.keyword}' in {thread_url}")
+        
+        except Exception as e:
+            logger.error(f"Error processing thread {thread_url}: {str(e)}")
+        
+        return matches
+    
+    def _create_snippet(self, text: str, keyword: str, context_length: int = 200) -> str:
+        """
+        Create a snippet around the keyword.
+        
+        Args:
+            text: Full text
+            keyword: Keyword to find
+            context_length: Characters of context to include
+            
+        Returns:
+            Snippet string
+        """
+        pos = text.find(keyword)
+        if pos == -1:
+            return text[:context_length]
+        
+        start = max(0, pos - context_length // 2)
+        end = min(len(text), pos + len(keyword) + context_length // 2)
+        
+        snippet = text[start:end].strip()
+        if start > 0:
+            snippet = "..." + snippet
+        if end < len(text):
+            snippet = snippet + "..."
+        
+        return snippet
+    
+    def _save_match(self, forum: Forum, keyword: Keyword, url: str, snippet: str) -> Optional[Match]:
+        """
+        Save a match to the database.
+        
+        Args:
+            forum: Forum object
+            keyword: Keyword object
+            url: Page URL
+            snippet: Text snippet
+            
+        Returns:
+            Match object if saved, None if duplicate
+        """
+        try:
+            match = Match(
+                forum_id=forum.id,
+                keyword_id=keyword.id,
+                page_url=url,
+                snippet=snippet
+            )
+            self.db_session.add(match)
+            self.db_session.commit()
+            return match
+        except IntegrityError:
+            self.db_session.rollback()
+            logger.debug(f"Duplicate match skipped: {url}")
+            return None
+        except Exception as e:
+            self.db_session.rollback()
+            logger.error(f"Error saving match: {str(e)}")
+            return None
+    
+    def close(self):
+        """Close the crawler."""
+        self.crawler.close()
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
