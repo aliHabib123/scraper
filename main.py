@@ -16,6 +16,7 @@ from models import Forum, Keyword
 from models.base import get_session_maker, init_db
 from crawler import ForumCrawler
 from parsers import CasinoGuruParser, BitcoinTalkParser
+from notifier import TelegramNotifier
 
 # Configure logging
 logging.basicConfig(
@@ -56,13 +57,54 @@ def get_parser_for_forum(forum_name: str):
     return parser_class()
 
 
-def crawl_all_forums(session: Session, rate_limit: float = 2.0) -> Dict[str, Dict]:
+def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifier: TelegramNotifier = None) -> Dict[str, int]:
+    """
+    Crawl a single forum for keywords.
+    
+    Args:
+        session: Database session
+        forum: Forum to crawl
+        keywords: Keywords to search for
+        notifier: Optional Telegram notifier
+        
+    Returns:
+        Dict with crawl statistics
+    """
+    logger.info(f"Processing forum: {forum.name}")
+    
+    # Get appropriate parser
+    parser = get_parser_for_forum(forum.name)
+    
+    # Create crawler
+    crawler = ForumCrawler(forum, parser, session)
+    
+    # Crawl and get results
+    matches = crawler.crawl(keywords)
+    
+    # Send notifications if new matches found and notifier configured
+    if notifier and matches:
+        match_data = [{
+            'keyword': m.keyword.keyword,
+            'url': m.page_url,
+            'snippet': m.snippet
+        } for m in matches]
+        notifier.notify_matches(forum.name, match_data)
+    
+    # Send summary notification
+    if notifier:
+        notifier.notify_crawl_summary(forum.name, crawler.stats)
+    
+    return crawler.stats
+
+
+def crawl_all_forums(session: Session, rate_limit: float = 2.0, notifier: TelegramNotifier = None) -> Dict[str, Dict]:
     """
     Crawl all enabled forums for all enabled keywords.
     
     Args:
         session: Database session
         rate_limit: Seconds between requests
+        notifier: Optional Telegram notifier
         
     Returns:
         Dict with stats for each forum
@@ -84,24 +126,12 @@ def crawl_all_forums(session: Session, rate_limit: float = 2.0) -> Dict[str, Dic
     results = {}
     
     for forum in forums:
-        logger.info(f"Processing forum: {forum.name}")
-        
         try:
-            # Get appropriate parser
-            parser = get_parser_for_forum(forum.name)
-            
-            # Create crawler and process forum
-            with ForumCrawler(session, parser, rate_limit=rate_limit) as crawler:
-                stats = crawler.crawl_forum(forum, keywords)
-                results[forum.name] = stats
-                
+            stats = crawl_forum(session, forum, keywords, notifier)
+            results[forum.name] = stats
         except Exception as e:
-            logger.error(f"Failed to crawl forum '{forum.name}': {str(e)}")
-            results[forum.name] = {
-                'matches_found': 0,
-                'pages_crawled': 0,
-                'errors': 1
-            }
+            logger.error(f"Error crawling {forum.name}: {str(e)}")
+            results[forum.name] = {'matches_found': 0, 'pages_crawled': 0, 'errors': 1}
     
     return results
 
@@ -136,35 +166,22 @@ def print_summary(results: Dict[str, Dict]):
 
 def main():
     """Main entry point."""
-    parser = argparse.ArgumentParser(
-        description='Forum crawler for keyword monitoring',
-        formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    
-    parser.add_argument(
-        '--init-db',
-        action='store_true',
-        help='Initialize database tables'
-    )
-    
-    parser.add_argument(
-        '--rate-limit',
-        type=float,
-        default=2.0,
-        help='Minimum seconds between requests (default: 2.0)'
-    )
-    
-    parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Enable verbose logging'
-    )
+    parser = argparse.ArgumentParser(description='Forum keyword crawler')
+    parser.add_argument('--verbose', action='store_true', help='Enable verbose logging')
+    parser.add_argument('--rate-limit', type=float, help='Rate limit in seconds')
+    parser.add_argument('--no-telegram', action='store_true', help='Disable Telegram notifications')
     
     args = parser.parse_args()
     
-    # Set log level
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
+    
+    # Initialize Telegram notifier
+    notifier = None if args.no_telegram else TelegramNotifier()
+    
+    # Get database session
+    SessionMaker = get_session_maker()
+    session = SessionMaker()
     
     # Initialize database if requested
     if args.init_db:
