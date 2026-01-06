@@ -191,6 +191,117 @@ for match in matches:
 session.close()
 ```
 
+## CLI Management Tools
+
+The project includes CLI tools for managing keywords and forums without writing Python code.
+
+### Keyword Management
+
+```bash
+# List all keywords
+python manage_keywords.py list
+
+# Add a new keyword
+python manage_keywords.py add "jackpot"
+python manage_keywords.py add "rigged" --disabled
+
+# Remove a keyword (with confirmation)
+python manage_keywords.py remove 4
+
+# Enable/disable a keyword
+python manage_keywords.py toggle 1
+```
+
+**Example Output:**
+```
+$ python manage_keywords.py list
+
+ID    Keyword                        Enabled   
+--------------------------------------------------
+1     bonus                          ✓ Yes     
+2     scam                           ✓ Yes     
+3     withdrawal                     ✓ Yes     
+4     jackpot                        ✓ Yes     
+```
+
+### Forum Management
+
+```bash
+# List all forums
+python manage_forums.py list
+
+# Add a new forum
+python manage_forums.py add "bitcointalk" \
+  "https://bitcointalk.org" \
+  "https://bitcointalk.org/index.php?board=56.0" \
+  --max-pages 5
+
+# Multiple start URLs (comma-separated)
+python manage_forums.py add "reddit" \
+  "https://reddit.com" \
+  "https://reddit.com/r/gambling,https://reddit.com/r/casino" \
+  --max-pages 10
+
+# Update forum settings
+python manage_forums.py update 1 --max-pages 20
+python manage_forums.py update 2 --name "BitcoinTalk Forum"
+
+# Remove a forum (with confirmation)
+python manage_forums.py remove 2
+
+# Enable/disable a forum
+python manage_forums.py toggle 1
+```
+
+**Example Output:**
+```
+$ python manage_forums.py list
+
+ID: 1
+Name: casino.guru
+Status: ✓ Enabled
+Type: category
+Max Pages: 10
+Start URLs (4):
+  - https://casino.guru/forum/casinos
+  - https://casino.guru/forum/bonuses-and-promotions
+  - https://casino.guru/forum/complaints-discussion
+  - https://casino.guru/forum/general-gambling-discussion
+------------------------------------------------------------
+
+ID: 2
+Name: bitcointalk
+Status: ✓ Enabled
+Type: category
+Max Pages: 5
+Start URLs (1):
+  - https://bitcointalk.org/index.php?board=56.0
+------------------------------------------------------------
+```
+
+### Check Matches
+
+```bash
+# View matches in database
+python check_matches.py
+```
+
+**Example Output:**
+```
+Total matches found: 56
+
+Matches by keyword:
+  bonus: 26
+  scam: 11
+  withdrawal: 19
+
+Sample matches:
+
+Keyword: scam
+URL: https://casino.guru/forum/casinos/beware--scam-casinos...
+Snippet: [Post #1 by XDaniel] beware, scam casinos on the rise!...
+```
+
 ## Adding New Forum Parsers
 
 1. Create a new parser in `parsers/`:
