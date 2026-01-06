@@ -27,7 +27,7 @@ class CasinoGuruParser(BaseParser):
         """
         Extract thread URLs from casino.guru category page.
         
-        Looks for thread links in the forum listing.
+        Casino.guru uses <a class="title"> for thread links.
         """
         thread_urls = []
         
@@ -35,39 +35,21 @@ class CasinoGuruParser(BaseParser):
         parsed = urlparse(base_url)
         base_domain = f"{parsed.scheme}://{parsed.netloc}"
         
-        # Casino.guru typically has thread links in various patterns
-        # Common selectors: a tags with href containing '/thread/', '/topic/', or similar
+        # Casino.guru specific: thread links have class="title"
+        thread_links = soup.find_all('a', class_='title', href=True)
         
-        # Try multiple strategies to find thread links
-        thread_links = []
-        
-        # Strategy 1: Find links with 'thread' or 'topic' in href
-        for link in soup.find_all('a', href=True):
-            href = link['href']
-            if any(pattern in href.lower() for pattern in ['/thread/', '/topic/', '/discussion/', '/post/']):
-                thread_links.append(link)
-        
-        # Strategy 2: If no links found, look for links in specific containers
-        if not thread_links:
-            # Look for common forum list containers
-            for container in soup.select('.topic-list, .thread-list, .forum-list, .discussions'):
-                thread_links.extend(container.find_all('a', href=True))
-        
-        # Strategy 3: If still no links, get all links from main content area
-        if not thread_links:
-            main_content = soup.find('main') or soup.find('div', class_=['content', 'main-content'])
-            if main_content:
-                thread_links = main_content.find_all('a', href=True)
-        
-        # Convert to absolute URLs and deduplicate
+        # Filter and convert to absolute URLs
         seen = set()
         for link in thread_links:
             href = link['href']
             
-            # Skip non-thread links
+            # Skip pagination links and other non-thread links
             if href.startswith('#') or href.startswith('javascript:'):
                 continue
-            if any(skip in href.lower() for skip in ['login', 'register', 'profile', 'search', 'category']):
+            
+            # Skip if it's just a page number (like /forum/casinos/2)
+            # Thread URLs contain the thread name/slug
+            if href.count('/') <= 3:  # e.g., /forum/casinos/2 has 3 slashes
                 continue
             
             # Convert to absolute URL
@@ -77,6 +59,10 @@ class CasinoGuruParser(BaseParser):
                 url = href
             else:
                 url = urljoin(base_url, href)
+            
+            # Remove anchor/fragment (#post-123)
+            if '#' in url:
+                url = url.split('#')[0]
             
             # Deduplicate
             if url not in seen:
@@ -162,3 +148,112 @@ class CasinoGuruParser(BaseParser):
         
         logger.debug(f"Extracted thread: {result['title'][:50]}...")
         return result
+    
+    def extract_all_posts(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+        """
+        Extract all posts from a casino.guru thread.
+        
+        Returns:
+            List of post dicts with 'content', 'author', 'post_number'
+        """
+        posts = []
+        
+        # Extract title first
+        title = ''
+        title_selectors = ['h1', '.thread-title', '.topic-title', '.discussion-title', 'title']
+        for selector in title_selectors:
+            title_elem = soup.select_one(selector)
+            if title_elem:
+                title = title_elem.get_text(strip=True)
+                break
+        
+        # Try multiple strategies to find all posts
+        post_elements = []
+        
+        # Strategy 1: Look for post containers with common classes
+        post_selectors = [
+            '.post',
+            '.message',
+            '.comment',
+            '.forum-post',
+            'article.post',
+            'div[class*="post"]',
+            'div[class*="message"]',
+            'li[class*="post"]',
+        ]
+        
+        for selector in post_selectors:
+            post_elements = soup.select(selector)
+            if post_elements:
+                logger.debug(f"Found {len(post_elements)} posts using selector: {selector}")
+                break
+        
+        # Strategy 2: If no posts found, look for common content containers
+        if not post_elements:
+            # Try finding posts by structure
+            for container_selector in ['.posts', '.messages', '.comments', '#posts', 'main', 'article']:
+                container = soup.select_one(container_selector)
+                if container:
+                    # Find all divs with text content
+                    post_elements = container.find_all(['div', 'article', 'li'], recursive=True, limit=100)
+                    # Filter to those that look like posts (have substantial text)
+                    post_elements = [p for p in post_elements if len(p.get_text(strip=True)) > 50]
+                    if post_elements:
+                        logger.debug(f"Found {len(post_elements)} potential posts in {container_selector}")
+                        break
+        
+        # Process found posts
+        for idx, post_elem in enumerate(post_elements, start=1):
+            try:
+                # Extract post content
+                # Try to find the main content within the post
+                content_elem = (
+                    post_elem.select_one('.post-content') or
+                    post_elem.select_one('.message-content') or
+                    post_elem.select_one('.post-body') or
+                    post_elem.select_one('.content') or
+                    post_elem
+                )
+                
+                content_text = content_elem.get_text(separator=' ', strip=True)
+                
+                # Skip if too short (likely not a real post)
+                if len(content_text) < 20:
+                    continue
+                
+                # Try to extract author
+                author = 'Unknown'
+                author_selectors = ['.author', '.username', '.post-author', '[class*="author"]', '[class*="username"]']
+                for auth_sel in author_selectors:
+                    author_elem = post_elem.select_one(auth_sel)
+                    if author_elem:
+                        author = author_elem.get_text(strip=True)
+                        break
+                
+                # First post includes title
+                if idx == 1 and title:
+                    content_text = f"{title} {content_text}"
+                
+                posts.append({
+                    'content': content_text,
+                    'author': author,
+                    'post_number': idx
+                })
+                
+            except Exception as e:
+                logger.warning(f"Error extracting post {idx}: {str(e)}")
+                continue
+        
+        # Fallback: if no posts found, use the old method
+        if not posts:
+            logger.debug("No posts found with standard selectors, using fallback")
+            thread_data = self.extract_thread_content(soup)
+            if thread_data:
+                posts = [{
+                    'content': f"{thread_data['title']} {thread_data['content']}",
+                    'author': 'Unknown',
+                    'post_number': 1
+                }]
+        
+        logger.debug(f"Extracted {len(posts)} posts from thread")
+        return posts

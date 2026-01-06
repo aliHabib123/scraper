@@ -114,7 +114,7 @@ class ForumCrawler:
     
     def _process_thread(self, forum: Forum, thread_url: str, keywords: List[Keyword]) -> List[Match]:
         """
-        Process a thread and check for keyword matches.
+        Process a thread and check for keyword matches in all posts.
         
         Args:
             forum: Forum object
@@ -132,25 +132,35 @@ class ForumCrawler:
             if not soup:
                 return matches
             
-            # Extract thread content
-            thread_data = self.parser.extract_thread_content(soup)
-            if not thread_data:
+            # Extract all posts from thread
+            posts = self.parser.extract_all_posts(soup)
+            if not posts:
+                logger.warning(f"No posts extracted from {thread_url}")
                 return matches
             
-            # Combine title and content for searching
-            searchable_text = f"{thread_data['title']} {thread_data['content']}".lower()
+            logger.debug(f"Processing {len(posts)} posts from thread")
             
-            # Check each keyword
-            for keyword in keywords:
-                if keyword.keyword.lower() in searchable_text:
-                    # Create snippet (extract context around keyword)
-                    snippet = self._create_snippet(searchable_text, keyword.keyword.lower())
-                    
-                    # Save match to database
-                    match = self._save_match(forum, keyword, thread_url, snippet)
-                    if match:
-                        matches.append(match)
-                        logger.info(f"Match found: '{keyword.keyword}' in {thread_url}")
+            # Check each post for keywords
+            for post in posts:
+                post_content = post['content'].lower()
+                post_number = post.get('post_number', 0)
+                author = post.get('author', 'Unknown')
+                
+                # Check each keyword
+                for keyword in keywords:
+                    if keyword.keyword.lower() in post_content:
+                        # Create snippet (extract context around keyword)
+                        snippet = self._create_snippet(post_content, keyword.keyword.lower())
+                        
+                        # Add context: post number and author
+                        snippet_with_context = f"[Post #{post_number} by {author}] {snippet}"
+                        
+                        # Save match to database
+                        # Note: Same URL can have multiple matches for different posts
+                        match = self._save_match(forum, keyword, thread_url, snippet_with_context)
+                        if match:
+                            matches.append(match)
+                            logger.info(f"Match found: '{keyword.keyword}' in {thread_url} (post #{post_number})")
         
         except Exception as e:
             logger.error(f"Error processing thread {thread_url}: {str(e)}")

@@ -46,3 +46,24 @@ class BaseParser(ABC):
             Dict with 'title' and 'content' keys, or None if extraction fails
         """
         pass
+    
+    def extract_all_posts(self, soup: BeautifulSoup) -> List[Dict[str, str]]:
+        """
+        Extract all posts from a thread (title + all post contents).
+        Default implementation extracts just the first post.
+        Override in subclass for better coverage.
+        
+        Args:
+            soup: BeautifulSoup object of the thread page
+            
+        Returns:
+            List of dicts with 'content' and optional 'author', 'post_number' keys
+        """
+        # Default: just return first post
+        thread_data = self.extract_thread_content(soup)
+        if thread_data:
+            return [{
+                'content': f"{thread_data['title']} {thread_data['content']}",
+                'post_number': 1
+            }]
+        return []
