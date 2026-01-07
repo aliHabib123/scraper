@@ -15,13 +15,14 @@ class CasinoGuruParser(BaseParser):
         """
         Generate paginated URL for casino.guru.
         
-        Casino.guru uses ?page=N format for pagination.
+        Casino.guru uses /N format for pagination (e.g., /2, /3).
         """
         if page_num == 1:
             return base_url
         
-        separator = '&' if '?' in base_url else '?'
-        return f"{base_url}{separator}page={page_num}"
+        # Remove trailing slash if present
+        base_url = base_url.rstrip('/')
+        return f"{base_url}/{page_num}"
     
     def extract_thread_urls(self, soup: BeautifulSoup, base_url: str) -> List[str]:
         """
