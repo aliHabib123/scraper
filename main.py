@@ -204,7 +204,7 @@ def main():
         SessionMaker = get_session_maker()
         session = SessionMaker()
         
-        results = crawl_all_forums(session, rate_limit=args.rate_limit)
+        results = crawl_all_forums(session, rate_limit=args.rate_limit, notifier=notifier)
         print_summary(results)
         
         session.close()
