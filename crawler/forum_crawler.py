@@ -40,6 +40,7 @@ class ForumCrawler:
         stats = {
             'matches_found': 0,
             'pages_crawled': 0,
+            'threads_found': 0,
             'errors': 0
         }
         
@@ -55,9 +56,10 @@ class ForumCrawler:
             thread_urls = []
             for start_url in forum.start_urls:
                 logger.info(f"Processing start URL: {start_url}")
-                urls = self._crawl_category_pages(start_url, forum.max_pages)
+                urls, pages = self._crawl_category_pages(start_url, forum.max_pages)
                 thread_urls.extend(urls)
-                stats['pages_crawled'] += len(urls)
+                stats['pages_crawled'] += pages
+                stats['threads_found'] += len(urls)
             
             logger.info(f"Found {len(thread_urls)} thread URLs")
             
@@ -73,7 +75,7 @@ class ForumCrawler:
         logger.info(f"Finished crawling {forum.name}: {stats}")
         return stats
     
-    def _crawl_category_pages(self, start_url: str, max_pages: int) -> List[str]:
+    def _crawl_category_pages(self, start_url: str, max_pages: int) -> tuple[List[str], int]:
         """
         Crawl category pages to extract thread URLs.
         
@@ -82,9 +84,10 @@ class ForumCrawler:
             max_pages: Maximum pages to crawl
             
         Returns:
-            List of thread URLs
+            Tuple of (thread URLs list, number of pages crawled)
         """
         thread_urls = []
+        pages_crawled = 0
         
         for page_num in range(1, max_pages + 1):
             try:
@@ -104,13 +107,14 @@ class ForumCrawler:
                     break
                 
                 thread_urls.extend(urls)
+                pages_crawled += 1
                 logger.info(f"Page {page_num}: Found {len(urls)} threads")
                 
             except Exception as e:
                 logger.error(f"Error crawling category page {page_num}: {str(e)}")
                 break
         
-        return thread_urls
+        return thread_urls, pages_crawled
     
     def _process_thread(self, forum: Forum, thread_url: str, keywords: List[Keyword]) -> List[Match]:
         """

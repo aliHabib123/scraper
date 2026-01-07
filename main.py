@@ -76,25 +76,32 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     parser = get_parser_for_forum(forum.name)
     
     # Create crawler
-    crawler = ForumCrawler(forum, parser, session)
+    crawler = ForumCrawler(session, parser)
     
     # Crawl and get results
-    matches = crawler.crawl(keywords)
+    stats = crawler.crawl_forum(forum, keywords)
+    
+    # Get matches from database for this forum (for notifications)
+    from models import Match
+    matches = session.query(Match).filter(
+        Match.forum_id == forum.id,
+        Match.keyword_id.in_([k.id for k in keywords])
+    ).all()
     
     # Send notifications if new matches found and notifier configured
-    if notifier and matches:
+    if notifier and stats['matches_found'] > 0:
         match_data = [{
             'keyword': m.keyword.keyword,
             'url': m.page_url,
             'snippet': m.snippet
-        } for m in matches]
+        } for m in matches[-stats['matches_found']:]]
         notifier.notify_matches(forum.name, match_data)
     
     # Send summary notification
     if notifier:
-        notifier.notify_crawl_summary(forum.name, crawler.stats)
+        notifier.notify_crawl_summary(forum.name, stats)
     
-    return crawler.stats
+    return stats
 
 
 def crawl_all_forums(session: Session, rate_limit: float = 2.0, notifier: TelegramNotifier = None) -> Dict[str, Dict]:
@@ -144,22 +151,31 @@ def print_summary(results: Dict[str, Dict]):
     
     total_matches = 0
     total_pages = 0
+    total_threads = 0
     total_errors = 0
     
     for forum_name, stats in results.items():
-        print(f"\n{forum_name}:")
-        print(f"  Matches found: {stats['matches_found']}")
-        print(f"  Pages crawled: {stats['pages_crawled']}")
-        print(f"  Errors: {stats['errors']}")
+        matches = stats.get('matches_found', 0)
+        pages = stats.get('pages_crawled', 0)
+        threads = stats.get('threads_found', 0)
+        errors = stats.get('errors', 0)
         
-        total_matches += stats['matches_found']
-        total_pages += stats['pages_crawled']
-        total_errors += stats['errors']
+        total_matches += matches
+        total_pages += pages
+        total_threads += threads
+        total_errors += errors
+        
+        print(f"\n{forum_name}:")
+        print(f"  Matches found: {matches}")
+        print(f"  Pages crawled: {pages}")
+        print(f"  Threads processed: {threads}")
+        print(f"  Errors: {errors}")
     
     print("\n" + "-"*60)
     print("TOTALS:")
     print(f"  Total matches: {total_matches}")
     print(f"  Total pages: {total_pages}")
+    print(f"  Total threads: {total_threads}")
     print(f"  Total errors: {total_errors}")
     print("="*60 + "\n")
 
@@ -182,17 +198,6 @@ def main():
     # Get database session
     SessionMaker = get_session_maker()
     session = SessionMaker()
-    
-    # Initialize database if requested
-    if args.init_db:
-        logger.info("Initializing database...")
-        try:
-            init_db()
-            logger.info("Database initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize database: {str(e)}")
-            sys.exit(1)
-        return
     
     # Run crawler
     try:
