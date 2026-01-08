@@ -1,7 +1,7 @@
 import httpx
 import time
 import logging
-from typing import Optional
+from typing import Optional, Union, Dict, Any
 from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
@@ -61,6 +61,47 @@ class BaseCrawler:
             logger.error(f"Unexpected error fetching {url}: {str(e)}")
         
         return None
+    
+    def fetch_json(self, url: str) -> Optional[Dict[Any, Any]]:
+        """
+        Fetch a JSON API response (e.g., Reddit).
+        
+        Args:
+            url: URL to fetch
+            
+        Returns:
+            Dict (parsed JSON) or None if request fails
+        """
+        self._wait_for_rate_limit()
+        
+        try:
+            logger.info(f"Fetching: {url}")
+            response = self.client.get(url)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            logger.error(f"HTTP error fetching {url}: {e.response.status_code}")
+        except httpx.RequestError as e:
+            logger.error(f"Request error fetching {url}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Unexpected error fetching {url}: {str(e)}")
+        
+        return None
+    
+    def fetch(self, url: str, json_mode: bool = False) -> Optional[Union[BeautifulSoup, Dict[Any, Any]]]:
+        """
+        Fetch a page - returns either BeautifulSoup (HTML) or Dict (JSON).
+        
+        Args:
+            url: URL to fetch
+            json_mode: If True, parse as JSON instead of HTML
+            
+        Returns:
+            BeautifulSoup object, Dict, or None if request fails
+        """
+        if json_mode:
+            return self.fetch_json(url)
+        return self.fetch_page(url)
     
     def close(self):
         """Close the HTTP client."""

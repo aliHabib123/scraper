@@ -89,13 +89,16 @@ class ForumCrawler:
         thread_urls = []
         pages_crawled = 0
         
+        # Detect if this is Reddit (JSON API)
+        is_reddit = 'reddit.com' in start_url
+        
         for page_num in range(1, max_pages + 1):
             try:
                 # Get paginated URL
                 page_url = self.parser.get_paginated_url(start_url, page_num)
                 
-                # Fetch page
-                soup = self.crawler.fetch_page(page_url)
+                # Fetch page (JSON for Reddit, HTML for others)
+                soup = self.crawler.fetch(page_url, json_mode=is_reddit)
                 if not soup:
                     logger.warning(f"Failed to fetch category page: {page_url}")
                     break
@@ -131,8 +134,11 @@ class ForumCrawler:
         matches = []
         
         try:
-            # Fetch thread page
-            soup = self.crawler.fetch_page(thread_url)
+            # Detect if this is Reddit (JSON API)
+            is_reddit = 'reddit.com' in thread_url
+            
+            # Fetch thread page (JSON for Reddit, HTML for others)
+            soup = self.crawler.fetch(thread_url + '.json' if is_reddit else thread_url, json_mode=is_reddit)
             if not soup:
                 return matches
             
