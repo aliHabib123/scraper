@@ -62,29 +62,46 @@ class BaseCrawler:
         
         return None
     
-    def fetch_json(self, url: str) -> Optional[Dict[Any, Any]]:
+    def fetch_json(self, url: str, max_retries: int = 3) -> Optional[Dict[Any, Any]]:
         """
-        Fetch a JSON API response (e.g., Reddit).
+        Fetch a JSON API response (e.g., Reddit) with retry logic.
         
         Args:
             url: URL to fetch
+            max_retries: Maximum number of retries for rate limit errors
             
         Returns:
             Dict (parsed JSON) or None if request fails
         """
-        self._wait_for_rate_limit()
-        
-        try:
-            logger.info(f"Fetching: {url}")
-            response = self.client.get(url)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error fetching {url}: {e.response.status_code}")
-        except httpx.RequestError as e:
-            logger.error(f"Request error fetching {url}: {str(e)}")
-        except Exception as e:
-            logger.error(f"Unexpected error fetching {url}: {str(e)}")
+        for attempt in range(max_retries):
+            self._wait_for_rate_limit()
+            
+            try:
+                logger.info(f"Fetching: {url}")
+                response = self.client.get(url)
+                response.raise_for_status()
+                return response.json()
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 429:  # Rate limit
+                    # Check x-ratelimit-reset header for wait time
+                    reset_after = e.response.headers.get('x-ratelimit-reset', '60')
+                    wait_time = int(reset_after) + 5  # Add 5 second buffer
+                    
+                    if attempt < max_retries - 1:
+                        logger.warning(f"Rate limited (429). Waiting {wait_time}s before retry {attempt + 1}/{max_retries}")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Rate limited (429) on final attempt. URL: {url}")
+                else:
+                    logger.error(f"HTTP error fetching {url}: {e.response.status_code}")
+                break
+            except httpx.RequestError as e:
+                logger.error(f"Request error fetching {url}: {str(e)}")
+                break
+            except Exception as e:
+                logger.error(f"Unexpected error fetching {url}: {str(e)}")
+                break
         
         return None
     

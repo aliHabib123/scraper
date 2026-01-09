@@ -13,29 +13,37 @@ class RedditParser(BaseParser):
     def __init__(self):
         """Initialize Reddit parser."""
         self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        self.after_token = None  # Track pagination token
     
     def get_paginated_url(self, base_url: str, page_num: int) -> str:
         """
         Generate paginated URL for Reddit.
         
         Reddit uses JSON API with 'after' parameter for pagination.
-        For initial implementation, we'll just use base_url and handle
-        pagination separately in the crawler using the 'after' token.
         
         Args:
             base_url: Base subreddit URL (e.g., https://www.reddit.com/r/casino)
-            page_num: Page number (not used for Reddit, kept for compatibility)
+            page_num: Page number (1 for first page, >1 uses after_token)
             
         Returns:
-            JSON API URL
+            JSON API URL with appropriate after token
         """
         # Convert regular Reddit URL to JSON API endpoint
         if not base_url.endswith('.json'):
-            # Remove trailing slash
             base_url = base_url.rstrip('/')
-            # Add /new.json for latest posts
-            return f"{base_url}/new.json?limit=100"
-        return base_url
+            base_url = f"{base_url}/new.json"
+        
+        # ALWAYS reset token on page 1 (new subreddit)
+        if page_num == 1:
+            self.after_token = None
+            return f"{base_url}?limit=30"
+        
+        # Subsequent pages use 'after' token (if available)
+        if self.after_token:
+            return f"{base_url}?limit=30&after={self.after_token}"
+        else:
+            # No more pages available
+            return f"{base_url}?limit=30"
     
     def extract_thread_urls(self, soup, base_url: str) -> List[str]:
         """
@@ -62,6 +70,9 @@ class RedditParser(BaseParser):
             data = soup.get('data', {})
             children = data.get('children', [])
             
+            # Store the 'after' token for pagination
+            self.after_token = data.get('after')  # Will be None if no more pages
+            
             for child in children:
                 post_data = child.get('data', {})
                 permalink = post_data.get('permalink')
@@ -71,7 +82,7 @@ class RedditParser(BaseParser):
                     full_url = f"https://www.reddit.com{permalink}"
                     post_urls.append(full_url)
             
-            logger.debug(f"Extracted {len(post_urls)} post URLs from Reddit")
+            logger.debug(f"Extracted {len(post_urls)} post URLs from Reddit (after={self.after_token})")
             
         except Exception as e:
             logger.error(f"Error extracting Reddit post URLs: {str(e)}")

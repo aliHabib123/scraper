@@ -113,6 +113,13 @@ class ForumCrawler:
                 pages_crawled += 1
                 logger.info(f"Page {page_num}: Found {len(urls)} threads")
                 
+                # For Reddit: check if there's a next page (after_token exists)
+                is_reddit = 'reddit.com' in start_url
+                if is_reddit and hasattr(self.parser, 'after_token'):
+                    if self.parser.after_token is None:
+                        logger.info(f"No more pages available (after_token is None)")
+                        break
+                
             except Exception as e:
                 logger.error(f"Error crawling category page {page_num}: {str(e)}")
                 break

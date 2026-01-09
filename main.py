@@ -80,8 +80,16 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     # Get appropriate parser
     parser = get_parser_for_forum(forum.name)
     
-    # Create crawler
-    crawler = ForumCrawler(session, parser)
+    # Set rate limit based on forum type
+    # Reddit: 100 requests per 10 minutes = 1 request per 6 seconds minimum
+    # Use 7 seconds to be safe
+    is_reddit = forum.name.lower() == 'reddit' or forum.name.startswith('r/')
+    rate_limit = 7.0 if is_reddit else 2.0
+    
+    logger.info(f"Using rate limit: {rate_limit}s per request")
+    
+    # Create crawler with appropriate rate limit
+    crawler = ForumCrawler(session, parser, rate_limit=rate_limit)
     
     # Crawl and get results
     stats = crawler.crawl_forum(forum, keywords)
