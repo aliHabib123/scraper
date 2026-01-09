@@ -157,6 +157,9 @@ class ForumCrawler:
             
             logger.debug(f"Processing {len(posts)} posts from thread")
             
+            # Track which keywords have been matched in this thread (deduplicate)
+            matched_keywords = set()
+            
             # Check each post for keywords
             for post in posts:
                 post_content = post['content'].lower()
@@ -165,6 +168,10 @@ class ForumCrawler:
                 
                 # Check each keyword
                 for keyword in keywords:
+                    # Skip if this keyword already matched in this thread
+                    if keyword.id in matched_keywords:
+                        continue
+                    
                     if keyword.keyword.lower() in post_content:
                         # Create snippet (extract context around keyword)
                         snippet = self._create_snippet(post_content, keyword.keyword.lower())
@@ -172,11 +179,11 @@ class ForumCrawler:
                         # Add context: post number and author
                         snippet_with_context = f"[Post #{post_number} by {author}] {snippet}"
                         
-                        # Save match to database
-                        # Note: Same URL can have multiple matches for different posts
+                        # Save match to database (only first occurrence per thread)
                         match = self._save_match(forum, keyword, thread_url, snippet_with_context)
                         if match:
                             matches.append(match)
+                            matched_keywords.add(keyword.id)  # Mark as matched
                             logger.info(f"Match found: '{keyword.keyword}' in {thread_url} (post #{post_number})")
         
         except Exception as e:
