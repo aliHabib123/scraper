@@ -1,0 +1,20 @@
+[Unit]
+Description=Forum Scraper Service
+After=network.target mysql.service
+
+[Service]
+Type=oneshot
+User=scraper
+Group=scraper
+WorkingDirectory=/home/scraper/scraper
+Environment="PATH=/home/scraper/scraper/venv/bin"
+ExecStart=/home/scraper/scraper/venv/bin/python /home/scraper/scraper/main.py
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+PrivateTmp=true
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

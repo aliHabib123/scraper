@@ -1,0 +1,16 @@
+[Unit]
+Description=Run Forum Scraper daily
+Requires=scraper.service
+
+[Timer]
+# Run once per day at midnight (00:00)
+OnCalendar=daily
+# Alternative: Specify exact time (e.g., 02:00 AM)
+# OnCalendar=*-*-* 02:00:00
+# Run 5 minutes after boot if missed
+OnBootSec=5min
+# If the system was off during a scheduled run, run it when system comes back
+Persistent=true
+
+[Install]
+WantedBy=timers.target
