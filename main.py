@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from models import Forum, Keyword
 from models.base import get_session_maker, init_db
 from crawler import ForumCrawler
-from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser
+from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser, AskGamblersParser
 from notifier import TelegramNotifier
 
 # Configure logging
@@ -51,6 +51,8 @@ def get_parser_for_forum(forum_name: str):
         'casino_guru': CasinoGuruParser,
         'bitcointalk': BitcoinTalkParser,
         'bitcointalk.org': BitcoinTalkParser,
+        'askgamblers': AskGamblersParser,
+        'askgamblers.com': AskGamblersParser,
     }
     
     parser_class = parsers.get(forum_name.lower())
