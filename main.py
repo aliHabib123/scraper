@@ -8,7 +8,7 @@ Monitors public forums for keyword mentions.
 import logging
 import sys
 import argparse
-from typing import Dict
+from typing import Dict, List
 
 from sqlalchemy.orm import Session
 
