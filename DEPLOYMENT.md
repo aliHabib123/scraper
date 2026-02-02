@@ -189,6 +189,42 @@ sudo systemctl stop scraper.timer
 sudo systemctl restart scraper.timer
 ```
 
+### Change Schedule
+
+To modify when the scraper runs:
+
+1. **Edit the schedule in `.env`:**
+```bash
+nano ~/scraper/.env
+```
+
+Change these values:
+```env
+SCHEDULE_INTERVAL=24    # Hours between runs (1, 2, 3, 4, 6, 8, 12, or 24)
+SCHEDULE_TIME=12:20     # Time in UTC (HH:MM format)
+```
+
+2. **Re-run the configuration script:**
+```bash
+cd ~/scraper/deployment
+sudo ./configure_schedule.sh
+```
+
+3. **Reload systemd and restart the timer:**
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart scraper.timer
+```
+
+4. **Verify the new schedule:**
+```bash
+systemctl status scraper.timer
+```
+
+Look for the "Trigger:" line to confirm your new schedule time.
+
+**Note:** The server runs on UTC. Convert your local time to UTC when setting `SCHEDULE_TIME`.
+
 ### Update code
 ```bash
 cd ~/scraper
