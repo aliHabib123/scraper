@@ -148,8 +148,17 @@ class PlaywrightCrawler:
                 logger.error(f"HTTP error fetching {url}: {response.status}")
                 return None
             
-            # Wait a bit for any JavaScript to execute
-            self.page.wait_for_timeout(1000)  # 1 second
+            # Wait for JavaScript-rendered content to load
+            # Try to wait for common content indicators
+            try:
+                # Wait for discussion items or main content area (with timeout)
+                self.page.wait_for_selector('a[href*="/discussion/"]', timeout=5000, state='visible')
+            except:
+                # If specific selector times out, just wait a bit
+                logger.debug("Specific selector not found, using general wait")
+            
+            # Additional wait for dynamic content
+            self.page.wait_for_timeout(2000)  # 2 seconds for JS to fully render
             
             # Get page content
             html = self.page.content()

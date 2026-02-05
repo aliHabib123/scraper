@@ -6,5 +6,6 @@ from .askgamblers_parser import AskGamblersParser
 from .bigwinboard_parser import BigWinBoardParser
 from .xenforo_parser import XenForoParser
 from .ownedcore_parser import OwnedCoreParser
+from .moneysavingexpert_parser import MoneySavingExpertParser
 
-__all__ = ['BaseParser', 'CasinoGuruParser', 'BitcoinTalkParser', 'RedditParser', 'AskGamblersParser', 'BigWinBoardParser', 'XenForoParser', 'OwnedCoreParser']
+__all__ = ['BaseParser', 'CasinoGuruParser', 'BitcoinTalkParser', 'RedditParser', 'AskGamblersParser', 'BigWinBoardParser', 'XenForoParser', 'OwnedCoreParser', 'MoneySavingExpertParser']
