@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ForumCrawler:
     """Main crawler for monitoring forums for keyword mentions."""
     
-    def __init__(self, db_session: Session, parser: BaseParser, rate_limit: float = 2.0):
+    def __init__(self, db_session: Session, parser: BaseParser, rate_limit: float = 2.0, cookies: Optional[Dict[str, str]] = None, use_playwright: bool = False, headless: bool = True):
         """
         Initialize forum crawler.
         
@@ -21,10 +21,23 @@ class ForumCrawler:
             db_session: SQLAlchemy database session
             parser: Forum-specific parser instance
             rate_limit: Minimum seconds between requests
+            cookies: Optional cookies dict for authenticated requests
+            use_playwright: Use Playwright browser instead of httpx (for Cloudflare bypass)
+            headless: Run Playwright in headless mode (default: True)
         """
         self.db_session = db_session
         self.parser = parser
-        self.crawler = BaseCrawler(rate_limit=rate_limit)
+        
+        # Use Playwright for sites with Cloudflare, otherwise use httpx
+        if use_playwright:
+            from .playwright_crawler import PlaywrightCrawler
+            self.crawler = PlaywrightCrawler(rate_limit=rate_limit, headless=headless)
+            mode = "headless" if headless else "visible"
+            logger.info(f"Using Playwright browser ({mode}) for Cloudflare bypass")
+        else:
+            self.crawler = BaseCrawler(rate_limit=rate_limit, cookies=cookies)
+        
+        self.use_playwright = use_playwright
     
     def crawl_forum(self, forum: Forum, keywords: List[Keyword]) -> Dict[str, int]:
         """
@@ -51,6 +64,12 @@ class ForumCrawler:
         logger.info(f"Starting crawl of forum: {forum.name}")
         logger.info(f"Searching for {len(keywords)} keywords")
         
+        # Warm up session for XenForo forums (establish cookies first)
+        if 'casinomeister' in forum.name.lower() or forum.base_url:
+            # Detect XenForo by checking if base_url exists
+            if forum.base_url and not forum.base_url.endswith('reddit.com'):
+                self.crawler.warm_up_session(forum.base_url)
+        
         try:
             # Get thread URLs from start_urls
             thread_urls = []
@@ -73,6 +92,11 @@ class ForumCrawler:
             stats['errors'] += 1
         
         logger.info(f"Finished crawling {forum.name}: {stats}")
+        
+        # Cleanup Playwright if used
+        if self.use_playwright:
+            self.crawler.close()
+        
         return stats
     
     def _crawl_category_pages(self, start_url: str, max_pages: int) -> tuple[List[str], int]:
@@ -98,7 +122,13 @@ class ForumCrawler:
                 page_url = self.parser.get_paginated_url(start_url, page_num)
                 
                 # Fetch page (JSON for Reddit, HTML for others)
-                soup = self.crawler.fetch(page_url, json_mode=is_reddit)
+                # For page 2+, use previous page as referer to look like navigation
+                if is_reddit:
+                    soup = self.crawler.fetch(page_url, json_mode=True)
+                else:
+                    referer = self.parser.get_paginated_url(start_url, page_num - 1) if page_num > 1 else None
+                    soup = self.crawler.fetch_page(page_url, referer=referer)
+                
                 if not soup:
                     logger.warning(f"Failed to fetch category page: {page_url}")
                     break

@@ -8,14 +8,16 @@ Monitors public forums for keyword mentions.
 import logging
 import sys
 import argparse
-from typing import Dict, List
+import os
+import json
+from typing import Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
 from models import Forum, Keyword
 from models.base import get_session_maker, init_db
 from crawler import ForumCrawler
-from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser, AskGamblersParser, BigWinBoardParser
+from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser, AskGamblersParser, BigWinBoardParser, XenForoParser
 from notifier import TelegramNotifier
 
 # Configure logging
@@ -29,6 +31,32 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+def get_cookies_for_forum(forum_name: str) -> Optional[Dict[str, str]]:
+    """
+    Load cookies from environment for specific forums.
+    
+    Args:
+        forum_name: Name of the forum
+        
+    Returns:
+        Dict of cookies or None
+    """
+    # Check for forum-specific cookies in environment
+    # Format: CASINOMEISTER_COOKIES='{"cookie_name": "cookie_value", ...}'
+    env_key = f"{forum_name.upper().replace('.', '_').replace('-', '_')}_COOKIES"
+    cookies_json = os.getenv(env_key)
+    
+    if cookies_json:
+        try:
+            cookies = json.loads(cookies_json)
+            logger.info(f"Loaded {len(cookies)} cookies for {forum_name}")
+            return cookies
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse cookies for {forum_name}: {e}")
+    
+    return None
 
 
 def get_parser_for_forum(forum_name: str):
@@ -55,6 +83,8 @@ def get_parser_for_forum(forum_name: str):
         'askgamblers.com': AskGamblersParser,
         'bigwinboard': BigWinBoardParser,
         'bigwinboard.com': BigWinBoardParser,
+        'casinomeister': XenForoParser,
+        'casinomeister.com': XenForoParser,
     }
     
     parser_class = parsers.get(forum_name.lower())
@@ -84,16 +114,35 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     # Get appropriate parser
     parser = get_parser_for_forum(forum.name)
     
+    # Get cookies if available
+    cookies = get_cookies_for_forum(forum.name)
+    
     # Set rate limit based on forum type
     # Reddit: 100 requests per 10 minutes = 1 request per 6 seconds minimum
-    # Use 7 seconds to be safe
+    # CasinoMeister: Has aggressive bot protection, use 5 seconds
     is_reddit = forum.name.lower() == 'reddit' or forum.name.startswith('r/')
-    rate_limit = 7.0 if is_reddit else 2.0
+    is_casinomeister = 'casinomeister' in forum.name.lower()
+    
+    if is_reddit:
+        rate_limit = 7.0
+    elif is_casinomeister:
+        rate_limit = 3.0  # Non-headless browser bypasses Cloudflare easily
+    else:
+        rate_limit = 2.0
     
     logger.info(f"Using rate limit: {rate_limit}s per request")
     
-    # Create crawler with appropriate rate limit
-    crawler = ForumCrawler(session, parser, rate_limit=rate_limit)
+    # Use Playwright for CasinoMeister (Cloudflare bypass)
+    use_playwright = is_casinomeister
+    if use_playwright:
+        logger.info("Enabling Playwright for Cloudflare bypass")
+    
+    # Check if headless mode should be disabled (for testing/debugging)
+    # Set PLAYWRIGHT_HEADLESS=false to see browser window (useful on macOS for testing)
+    headless = os.getenv('PLAYWRIGHT_HEADLESS', 'true').lower() != 'false'
+    
+    # Create crawler with appropriate rate limit and cookies
+    crawler = ForumCrawler(session, parser, rate_limit=rate_limit, cookies=cookies, use_playwright=use_playwright, headless=headless)
     
     # Crawl and get results
     stats = crawler.crawl_forum(forum, keywords)

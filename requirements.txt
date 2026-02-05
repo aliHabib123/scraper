@@ -13,3 +13,6 @@ mysql-connector-python==8.2.0
 
 # Optional but recommended
 python-dotenv==1.0.0
+
+# Playwright for Cloudflare bypass (CasinoMeister)
+playwright==1.40.0
