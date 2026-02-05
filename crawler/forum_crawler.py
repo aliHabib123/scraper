@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ForumCrawler:
     """Main crawler for monitoring forums for keyword mentions."""
     
-    def __init__(self, db_session: Session, parser: BaseParser, rate_limit: float = 2.0, cookies: Optional[Dict[str, str]] = None, use_playwright: bool = False, headless: bool = True):
+    def __init__(self, db_session: Session, parser: BaseParser, rate_limit: float = 2.0, cookies: Optional[Dict[str, str]] = None, use_playwright: bool = False, use_flaresolverr: bool = False, headless: bool = True):
         """
         Initialize forum crawler.
         
@@ -23,13 +23,18 @@ class ForumCrawler:
             rate_limit: Minimum seconds between requests
             cookies: Optional cookies dict for authenticated requests
             use_playwright: Use Playwright browser instead of httpx (for Cloudflare bypass)
+            use_flaresolverr: Use FlareSolverr service for Cloudflare bypass (priority over Playwright)
             headless: Run Playwright in headless mode (default: True)
         """
         self.db_session = db_session
         self.parser = parser
         
-        # Use Playwright for sites with Cloudflare, otherwise use httpx
-        if use_playwright:
+        # Choose crawler based on flags (FlareSolverr > Playwright > BaseCrawler)
+        if use_flaresolverr:
+            from .flaresolverr_crawler import FlareSolverrCrawler
+            self.crawler = FlareSolverrCrawler(rate_limit=rate_limit)
+            logger.info(f"Using FlareSolverr for Cloudflare bypass")
+        elif use_playwright:
             from .playwright_crawler import PlaywrightCrawler
             self.crawler = PlaywrightCrawler(rate_limit=rate_limit, headless=headless)
             mode = "headless" if headless else "visible"
@@ -38,6 +43,7 @@ class ForumCrawler:
             self.crawler = BaseCrawler(rate_limit=rate_limit, cookies=cookies)
         
         self.use_playwright = use_playwright
+        self.use_flaresolverr = use_flaresolverr
     
     def crawl_forum(self, forum: Forum, keywords: List[Keyword]) -> Dict[str, int]:
         """
@@ -93,8 +99,8 @@ class ForumCrawler:
         
         logger.info(f"Finished crawling {forum.name}: {stats}")
         
-        # Cleanup Playwright if used
-        if self.use_playwright:
+        # Cleanup browser/session resources if used
+        if self.use_playwright or self.use_flaresolverr:
             self.crawler.close()
         
         return stats

@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from models import Forum, Keyword
 from models.base import get_session_maker, init_db
 from crawler import ForumCrawler
-from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser, AskGamblersParser, BigWinBoardParser, XenForoParser
+from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser, AskGamblersParser, BigWinBoardParser, XenForoParser, OwnedCoreParser
 from notifier import TelegramNotifier
 
 # Configure logging
@@ -85,6 +85,8 @@ def get_parser_for_forum(forum_name: str):
         'bigwinboard.com': BigWinBoardParser,
         'casinomeister': XenForoParser,
         'casinomeister.com': XenForoParser,
+        'ownedcore': OwnedCoreParser,
+        'ownedcore.com': OwnedCoreParser,
     }
     
     parser_class = parsers.get(forum_name.lower())
@@ -119,22 +121,29 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     
     # Set rate limit based on forum type
     # Reddit: 100 requests per 10 minutes = 1 request per 6 seconds minimum
-    # CasinoMeister: Has aggressive bot protection, use 5 seconds
+    # CasinoMeister/OwnedCore: Has aggressive bot protection, use 3 seconds
     is_reddit = forum.name.lower() == 'reddit' or forum.name.startswith('r/')
     is_casinomeister = 'casinomeister' in forum.name.lower()
+    is_ownedcore = 'ownedcore' in forum.name.lower()
     
     if is_reddit:
         rate_limit = 7.0
-    elif is_casinomeister:
-        rate_limit = 3.0  # Non-headless browser bypasses Cloudflare easily
+    elif is_casinomeister or is_ownedcore:
+        rate_limit = 3.0  # Cloudflare bypass methods
     else:
         rate_limit = 2.0
     
     logger.info(f"Using rate limit: {rate_limit}s per request")
     
-    # Use Playwright for CasinoMeister (Cloudflare bypass)
+    # Choose Cloudflare bypass method
+    # OwnedCore: Use FlareSolverr (more aggressive Cloudflare)
+    # CasinoMeister: Use Playwright (works with non-headless)
+    use_flaresolverr = is_ownedcore
     use_playwright = is_casinomeister
-    if use_playwright:
+    
+    if use_flaresolverr:
+        logger.info("Enabling FlareSolverr for Cloudflare bypass")
+    elif use_playwright:
         logger.info("Enabling Playwright for Cloudflare bypass")
     
     # Check if headless mode should be disabled (for testing/debugging)
@@ -142,7 +151,7 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     headless = os.getenv('PLAYWRIGHT_HEADLESS', 'true').lower() != 'false'
     
     # Create crawler with appropriate rate limit and cookies
-    crawler = ForumCrawler(session, parser, rate_limit=rate_limit, cookies=cookies, use_playwright=use_playwright, headless=headless)
+    crawler = ForumCrawler(session, parser, rate_limit=rate_limit, cookies=cookies, use_playwright=use_playwright, use_flaresolverr=use_flaresolverr, headless=headless)
     
     # Crawl and get results
     stats = crawler.crawl_forum(forum, keywords)

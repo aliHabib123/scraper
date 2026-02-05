@@ -11,6 +11,13 @@ except ImportError:
     PLAYWRIGHT_AVAILABLE = False
     sync_playwright = None
 
+try:
+    from playwright_stealth import stealth_sync
+    STEALTH_AVAILABLE = True
+except ImportError:
+    STEALTH_AVAILABLE = False
+    stealth_sync = None
+
 logger = logging.getLogger(__name__)
 
 
@@ -70,6 +77,11 @@ class PlaywrightCrawler:
         
         # Create page and inject anti-detection scripts
         self.page: Page = self.context.new_page()
+        
+        # Apply playwright-stealth if available (better Cloudflare bypass)
+        if STEALTH_AVAILABLE:
+            stealth_sync(self.page)
+            logger.info("Playwright stealth mode enabled")
         
         # Remove webdriver property
         self.page.add_init_script("""
@@ -177,7 +189,25 @@ class PlaywrightCrawler:
         # Playwright doesn't need explicit warm-up, but we can visit the homepage anyway
         try:
             self.page.goto(base_url, timeout=self.timeout, wait_until='domcontentloaded')
-            self.page.wait_for_timeout(2000)  # Wait 2 seconds for Cloudflare challenge
+            self.page.wait_for_timeout(2000)  # Wait 2 seconds
+            
+            # Check for Cloudflare challenge
+            page_content = self.page.content().lower()
+            if 'cloudflare' in page_content and ('challenge' in page_content or 'checking your browser' in page_content or 'verify you are human' in page_content):
+                logger.warning("⚠️  Cloudflare challenge detected!")
+                logger.warning("Please complete the challenge in the browser window...")
+                logger.warning("Waiting 30 seconds for manual completion...")
+                
+                # Wait 30 seconds for user to complete challenge
+                self.page.wait_for_timeout(30000)
+                
+                # Check if challenge was completed
+                page_content_after = self.page.content().lower()
+                if 'cloudflare' in page_content_after and 'challenge' in page_content_after:
+                    logger.error("❌ Cloudflare challenge not completed - continuing anyway")
+                else:
+                    logger.info("✓ Cloudflare challenge appears to be completed")
+            
             logger.info("Playwright session ready")
             return True
         except Exception as e:
