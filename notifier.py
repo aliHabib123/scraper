@@ -77,8 +77,8 @@ class TelegramNotifier:
         message += f"<b>Forum:</b> {forum_name}\n"
         message += f"<b>Matches:</b> {len(matches)}\n\n"
         
-        # Add each match (limit to 10 for brevity)
-        for i, match in enumerate(matches[:10], 1):
+        # Add each match
+        for i, match in enumerate(matches, 1):
             keyword = match.get('keyword', 'unknown')
             url = match.get('url', '')
             snippet = match.get('snippet', '')[:100]  # Truncate
@@ -86,9 +86,6 @@ class TelegramNotifier:
             message += f"{i}. <b>{keyword}</b>\n"
             message += f"   <a href=\"{url}\">View Thread</a>\n"
             message += f"   <i>{snippet}...</i>\n\n"
-        
-        if len(matches) > 10:
-            message += f"... and {len(matches) - 10} more matches"
         
         return self.send_message(message)
     
