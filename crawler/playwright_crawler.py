@@ -1,6 +1,7 @@
 import time
 import random
 import logging
+import os
 from typing import Optional
 from bs4 import BeautifulSoup
 
@@ -17,6 +18,13 @@ try:
 except ImportError:
     STEALTH_AVAILABLE = False
     stealth_sync = None
+
+try:
+    import capsolver
+    CAPSOLVER_AVAILABLE = True
+except ImportError:
+    CAPSOLVER_AVAILABLE = False
+    capsolver = None
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +55,19 @@ class PlaywrightCrawler:
         self.persistent_state = persistent_state
         self.last_request_time = 0
         self.state_file = 'playwright_state.json'
+        
+        # Initialize CapSolver if available and API key is set
+        self.capsolver_enabled = False
+        if CAPSOLVER_AVAILABLE:
+            api_key = os.getenv('CAPSOLVER_API_KEY')
+            if api_key:
+                capsolver.api_key = api_key
+                self.capsolver_enabled = True
+                logger.info("CapSolver enabled for automatic Cloudflare challenge solving")
+            else:
+                logger.warning("CapSolver installed but CAPSOLVER_API_KEY not set")
+        else:
+            logger.debug("CapSolver not available - install with: pip install capsolver")
         
         # Initialize Playwright with stealth settings
         self.playwright = sync_playwright().start()
@@ -228,6 +249,82 @@ class PlaywrightCrawler:
         except Exception as e:
             logger.debug(f"Human behavior simulation failed (non-critical): {e}")
     
+    def _solve_cloudflare_challenge(self, url: str) -> bool:
+        """
+        Solve Cloudflare Turnstile challenge using CapSolver.
+        
+        Args:
+            url: URL of the page with the challenge
+            
+        Returns:
+            True if challenge was solved, False otherwise
+        """
+        if not self.capsolver_enabled:
+            return False
+        
+        try:
+            # Extract site key from page
+            page_content = self.page.content()
+            
+            # Cloudflare Turnstile uses data-sitekey attribute
+            import re
+            sitekey_match = re.search(r'data-sitekey=["\']([^"\']+)["\']', page_content)
+            if not sitekey_match:
+                # Try finding cf-chl-widget or turnstile widget
+                sitekey_match = re.search(r'sitekey["\']?\s*:\s*["\']([^"\']+)["\']', page_content)
+            
+            if not sitekey_match:
+                logger.warning("Could not extract Cloudflare site key from page")
+                return False
+            
+            sitekey = sitekey_match.group(1)
+            logger.info(f"Found Cloudflare site key: {sitekey[:20]}...")
+            
+            # Solve with CapSolver
+            logger.info("Sending challenge to CapSolver...")
+            solution = capsolver.solve({
+                "type": "AntiTurnstileTaskProxyLess",
+                "websiteURL": url,
+                "websiteKey": sitekey,
+            })
+            
+            if not solution or 'token' not in solution:
+                logger.error("CapSolver did not return a valid token")
+                return False
+            
+            token = solution['token']
+            logger.info("Received solution token from CapSolver")
+            
+            # Inject token into Cloudflare response field
+            self.page.evaluate(f"""
+                () => {{
+                    const responseField = document.querySelector('[name="cf-turnstile-response"]');
+                    if (responseField) {{
+                        responseField.value = '{token}';
+                    }}
+                    
+                    // Trigger Cloudflare callback
+                    if (window.turnstile && window.turnstile.reset) {{
+                        window.turnstile.reset();
+                    }}
+                }}
+            """)
+            
+            # Wait for page to reload or challenge to clear
+            self.page.wait_for_timeout(3000)
+            
+            # Check if challenge is still present
+            page_content_after = self.page.content().lower()
+            if 'challenge' in page_content_after or 'checking your browser' in page_content_after:
+                logger.warning("Challenge still present after token injection")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"CapSolver challenge solving failed: {str(e)}")
+            return False
+    
     def warm_up_session(self, base_url: str) -> bool:
         """
         Advanced warm-up: visit homepage, browse internal links, idle.
@@ -250,18 +347,29 @@ class PlaywrightCrawler:
             
             # Check for Cloudflare challenge
             page_content = self.page.content().lower()
-            if 'cloudflare' in page_content and ('challenge' in page_content or 'checking your browser' in page_content or 'verify you are human' in page_content):
+            if 'cloudflare' in page_content and ('challenge' in page_content or 'checking your browser' in page_content or 'verify you are human' in page_content or 'turnstile' in page_content):
                 logger.warning("⚠️  Cloudflare challenge detected!")
-                logger.warning("Please complete the challenge in the browser window...")
-                logger.warning("Waiting 30 seconds for manual completion...")
-                self.page.wait_for_timeout(30000)
                 
-                page_content_after = self.page.content().lower()
-                if 'cloudflare' in page_content_after and 'challenge' in page_content_after:
-                    logger.error("❌ Cloudflare challenge not completed")
-                    return False
+                # Try CapSolver first if available
+                if self.capsolver_enabled:
+                    logger.info("Attempting to solve Cloudflare challenge with CapSolver...")
+                    if self._solve_cloudflare_challenge(base_url):
+                        logger.info("✓ Cloudflare challenge solved with CapSolver")
+                    else:
+                        logger.error("❌ CapSolver failed to solve challenge")
+                        return False
                 else:
-                    logger.info("✓ Cloudflare challenge completed")
+                    # Manual completion fallback
+                    logger.warning("Please complete the challenge in the browser window...")
+                    logger.warning("Waiting 30 seconds for manual completion...")
+                    self.page.wait_for_timeout(30000)
+                    
+                    page_content_after = self.page.content().lower()
+                    if 'cloudflare' in page_content_after and 'challenge' in page_content_after:
+                        logger.error("❌ Cloudflare challenge not completed")
+                        return False
+                    else:
+                        logger.info("✓ Cloudflare challenge completed")
             
             # Step 2: Click 2-3 internal links
             logger.info("  2/4 Browsing internal links...")
@@ -277,9 +385,19 @@ class PlaywrightCrawler:
                         if len(internal_links) >= 10:  # Collect up to 10 candidates
                             break
             
-            # Visit 2-3 random internal links
-            num_links = random.randint(2, min(3, len(internal_links)))
-            for i, link in enumerate(random.sample(internal_links, num_links) if internal_links else [], 1):
+            # Visit 2-3 random internal links (if available)
+            if len(internal_links) >= 2:
+                num_links = random.randint(2, min(3, len(internal_links)))
+                sample_links = random.sample(internal_links, num_links)
+            elif len(internal_links) == 1:
+                num_links = 1
+                sample_links = internal_links
+            else:
+                logger.debug("No internal links found for warm-up browsing")
+                num_links = 0
+                sample_links = []
+            
+            for i, link in enumerate(sample_links, 1):
                 logger.info(f"     Visiting internal link {i}/{num_links}...")
                 try:
                     self.page.goto(link, timeout=self.timeout, wait_until='domcontentloaded')
