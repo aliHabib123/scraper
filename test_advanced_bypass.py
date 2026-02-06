@@ -33,6 +33,40 @@ def test_reddit():
     
     print()
 
+def test_ownedcore():
+    print("=" * 70)
+    print("Testing OwnedCore with Advanced Bypass")
+    print("=" * 70)
+    
+    url = 'https://www.ownedcore.com/forums/world-of-warcraft/'
+    crawler = PlaywrightCrawler(rate_limit=2.0, headless=True, persistent_state=True)
+    
+    try:
+        # Warm up IP
+        crawler.warm_up_session('https://www.ownedcore.com')
+        
+        # Try to fetch
+        print("\nAttempting to fetch OwnedCore...")
+        soup = crawler.fetch_page(url)
+        
+        if soup:
+            parser = XenForoParser()
+            threads = parser.extract_thread_urls(soup, url)
+            print(f"✓ Page loaded successfully")
+            print(f"Threads found: {len(threads)}")
+            
+            if threads:
+                print("\nFirst 3 threads:")
+                for t in threads[:3]:
+                    print(f"  - {t}")
+        else:
+            print("❌ Failed to load")
+    
+    finally:
+        crawler.close()
+    
+    print()
+
 def test_moneysavingexpert():
     print("=" * 70)
     print("Testing MoneySavingExpert with Advanced Bypass")
@@ -73,10 +107,13 @@ if __name__ == '__main__':
     print("  - Persistent browser state (cookies)")
     print("  - Human-like behavior (mouse, scroll)")
     print("  - IP warm-up (homepage + links + idle 30-60s)")
-    print("\nNote: First run will take 1-2 minutes due to warm-up.\n")
+    print("\nNote: First run will take 1-2 minutes per forum due to warm-up.\n")
     
     # Test MoneySavingExpert (most likely to work)
     test_moneysavingexpert()
     
-    # Reddit won't work (needs residential IP + JSON API)
-    # test_reddit()
+    # Test OwnedCore (aggressive Cloudflare - may or may not work)
+    test_ownedcore()
+    
+    # Test Reddit (will fail on server - datacenter IP blocked, but testing anyway)
+    test_reddit()
