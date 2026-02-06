@@ -167,18 +167,17 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
         Match.keyword_id.in_([k.id for k in keywords])
     ).all()
     
-    # Send notifications if new matches found and notifier configured
-    if notifier and stats['matches_found'] > 0:
-        match_data = [{
-            'keyword': m.keyword.keyword,
-            'url': m.page_url,
-            'snippet': m.snippet
-        } for m in matches[-stats['matches_found']:]]
-        notifier.notify_matches(forum.name, match_data)
-    
-    # Send summary notification
+    # Send consolidated notification with matches and summary
     if notifier:
-        notifier.notify_crawl_summary(forum.name, stats)
+        match_data = None
+        if stats['matches_found'] > 0:
+            match_data = [{
+                'keyword': m.keyword.keyword,
+                'url': m.page_url,
+                'snippet': m.snippet
+            } for m in matches[-stats['matches_found']:]]
+        
+        notifier.notify_forum_results(forum.name, stats, match_data)
     
     return stats
 

@@ -89,9 +89,55 @@ class TelegramNotifier:
         
         return self.send_message(message)
     
+    def notify_forum_results(self, forum_name: str, stats: dict, matches: List[dict] = None) -> bool:
+        """
+        Send consolidated forum crawl results notification.
+        
+        Args:
+            forum_name: Name of the forum
+            stats: Dict with keys: matches_found, pages_crawled, errors
+            matches: Optional list of match dicts with keys: keyword, url, snippet
+            
+        Returns:
+            True if sent successfully
+        """
+        pages = stats.get('pages_crawled', 0)
+        matches_count = stats.get('matches_found', 0)
+        errors = stats.get('errors', 0)
+        
+        # Build header
+        if matches_count > 0:
+            message = f"🔍 <b>Crawl Complete - {matches_count} Match{'es' if matches_count > 1 else ''} Found</b>\n\n"
+        else:
+            message = f"✅ <b>Crawl Complete - No Matches</b>\n\n"
+        
+        message += f"<b>Forum:</b> {forum_name}\n"
+        message += f"<b>Pages Crawled:</b> {pages}\n"
+        
+        if errors > 0:
+            message += f"⚠️ <b>Errors:</b> {errors}\n"
+        
+        # Add match details if any
+        if matches and matches_count > 0:
+            message += f"\n<b>─────────────────</b>\n"
+            message += f"<b>📋 Match Details:</b>\n\n"
+            
+            for match in matches:
+                keyword = match.get('keyword', 'unknown')
+                url = match.get('url', '')
+                snippet = match.get('snippet', '')[:150]  # Truncate to 150 chars
+                
+                message += f"<b>Keyword:</b> {keyword}\n"
+                message += f"   <a href=\"{url}\">View Thread</a>\n"
+                if snippet:
+                    message += f"   <i>{snippet}...</i>\n"
+                message += f"\n"
+        
+        return self.send_message(message)
+    
     def notify_crawl_summary(self, forum_name: str, stats: dict) -> bool:
         """
-        Send crawl summary notification.
+        Send crawl summary notification (DEPRECATED - use notify_forum_results).
         
         Args:
             forum_name: Name of the forum
@@ -100,20 +146,7 @@ class TelegramNotifier:
         Returns:
             True if sent successfully
         """
-        matches = stats.get('matches_found', 0)
-        pages = stats.get('pages_crawled', 0)
-        errors = stats.get('errors', 0)
-        
-        # Build message
-        message = f"✅ <b>Crawl Complete</b>\n\n"
-        message += f"<b>Forum:</b> {forum_name}\n"
-        message += f"<b>Pages Crawled:</b> {pages}\n"
-        message += f"<b>Matches Found:</b> {matches}\n"
-        
-        if errors > 0:
-            message += f"⚠️ <b>Errors:</b> {errors}\n"
-        
-        return self.send_message(message)
+        return self.notify_forum_results(forum_name, stats)
     
     def test_connection(self) -> bool:
         """Test Telegram connection."""
