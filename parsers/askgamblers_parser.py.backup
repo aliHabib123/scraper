@@ -43,39 +43,34 @@ class AskGamblersParser(BaseParser):
             List of thread URLs
         """
         thread_urls = []
-        seen = set()
         
         try:
-            from urllib.parse import urlparse
-            parsed = urlparse(base_url)
-            base_domain = f"{parsed.scheme}://{parsed.netloc}"
+            # Find all thread items with data-rowID attribute
+            thread_items = soup.find_all('li', attrs={'data-rowid': True})
             
-            # Find all links with /topic/ in href
-            for link in soup.find_all('a', href=True):
+            for item in thread_items:
+                # Find the thread title link
+                title_elem = item.find('h4', class_='ipsDataItem_title')
+                if not title_elem:
+                    continue
+                
+                link = title_elem.find('a', href=True)
+                if not link:
+                    continue
+                
                 href = link['href']
-                
-                # Skip non-topic links
-                if '/topic/' not in href:
-                    continue
-                
-                # Skip comment links (they have ?do=findComment)
-                if '?do=findComment' in href or '&do=findComment' in href:
-                    continue
                 
                 # Convert relative URL to absolute
                 if href.startswith('/'):
-                    full_url = f"{base_domain}{href}"
+                    from urllib.parse import urlparse
+                    parsed = urlparse(base_url)
+                    full_url = f"{parsed.scheme}://{parsed.netloc}{href}"
                 elif not href.startswith('http'):
                     full_url = base_url.rstrip('/') + '/' + href
                 else:
                     full_url = href
                 
-                # Remove query parameters and fragments for deduplication
-                clean_url = full_url.split('?')[0].split('#')[0]
-                
-                if clean_url not in seen:
-                    seen.add(clean_url)
-                    thread_urls.append(clean_url)
+                thread_urls.append(full_url)
             
             logger.debug(f"Extracted {len(thread_urls)} thread URLs")
             

@@ -123,16 +123,18 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     
     # Set rate limit based on forum type
     # Reddit: 100 requests per 10 minutes = 1 request per 6 seconds minimum
-    # CasinoMeister/OwnedCore/MoneySavingExpert: Has bot protection, use 3 seconds
+    # CasinoMeister/OwnedCore/MoneySavingExpert/AskGamblers/BigWinBoard: Has bot protection or JS rendering, use 3 seconds
     is_reddit = forum.name.lower() == 'reddit' or forum.name.startswith('r/')
     is_casinomeister = 'casinomeister' in forum.name.lower()
     is_ownedcore = 'ownedcore' in forum.name.lower()
     is_moneysavingexpert = 'moneysavingexpert' in forum.name.lower()
+    is_askgamblers = 'askgamblers' in forum.name.lower()
+    is_bigwinboard = 'bigwinboard' in forum.name.lower()
     
     if is_reddit:
         rate_limit = 7.0
-    elif is_casinomeister or is_ownedcore or is_moneysavingexpert:
-        rate_limit = 3.0  # Playwright/bot protection bypass
+    elif is_casinomeister or is_ownedcore or is_moneysavingexpert or is_askgamblers or is_bigwinboard:
+        rate_limit = 3.0  # Playwright/bot protection bypass or JS rendering
     else:
         rate_limit = 2.0
     
@@ -140,9 +142,9 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     
     # Choose Cloudflare/bot bypass method
     # OwnedCore: Skipped (too aggressive Cloudflare)
-    # CasinoMeister & MoneySavingExpert: Use Playwright
+    # CasinoMeister, MoneySavingExpert, AskGamblers, BigWinBoard: Use Playwright (JS rendering or bot protection)
     use_flaresolverr = is_ownedcore
-    use_playwright = is_casinomeister or is_moneysavingexpert
+    use_playwright = is_casinomeister or is_moneysavingexpert or is_askgamblers or is_bigwinboard
     
     if use_flaresolverr:
         logger.info("Enabling FlareSolverr for Cloudflare bypass")
