@@ -40,3 +40,6 @@ ENV/
 # OS
 .DS_Store
 Thumbs.db
+
+# Playwright
+playwright_state.json

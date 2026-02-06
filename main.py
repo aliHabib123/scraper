@@ -141,10 +141,9 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     logger.info(f"Using rate limit: {rate_limit}s per request")
     
     # Choose Cloudflare/bot bypass method
-    # OwnedCore: Skipped (too aggressive Cloudflare)
-    # CasinoMeister, MoneySavingExpert, AskGamblers, BigWinBoard: Use Playwright (JS rendering or bot protection)
-    use_flaresolverr = is_ownedcore
-    use_playwright = is_casinomeister or is_moneysavingexpert or is_askgamblers or is_bigwinboard
+    # All forums with aggressive Cloudflare or JS rendering: Use Playwright with advanced bypass
+    use_flaresolverr = False  # FlareSolverr disabled - using Playwright with persistent state instead
+    use_playwright = is_casinomeister or is_moneysavingexpert or is_askgamblers or is_bigwinboard or is_ownedcore
     
     if use_flaresolverr:
         logger.info("Enabling FlareSolverr for Cloudflare bypass")
