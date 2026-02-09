@@ -105,13 +105,14 @@ class BaseCrawler:
         
         return None
     
-    def fetch_json(self, url: str, max_retries: int = 3) -> Optional[Dict[Any, Any]]:
+    def fetch_json(self, url: str, max_retries: int = 3, custom_headers: Optional[Dict[str, str]] = None) -> Optional[Dict[Any, Any]]:
         """
         Fetch a JSON API response (e.g., Reddit) with retry logic.
         
         Args:
             url: URL to fetch
             max_retries: Maximum number of retries for rate limit errors
+            custom_headers: Optional custom headers to override defaults (e.g., for Reddit API)
             
         Returns:
             Dict (parsed JSON) or None if request fails
@@ -121,7 +122,11 @@ class BaseCrawler:
             
             try:
                 logger.info(f"Fetching: {url}")
-                response = self.client.get(url)
+                
+                # Use custom headers if provided (for Reddit API requirements)
+                headers = custom_headers if custom_headers else {}
+                
+                response = self.client.get(url, headers=headers)
                 response.raise_for_status()
                 return response.json()
             except httpx.HTTPStatusError as e:
@@ -148,19 +153,20 @@ class BaseCrawler:
         
         return None
     
-    def fetch(self, url: str, json_mode: bool = False) -> Optional[Union[BeautifulSoup, Dict[Any, Any]]]:
+    def fetch(self, url: str, json_mode: bool = False, custom_headers: Optional[Dict[str, str]] = None) -> Optional[Union[BeautifulSoup, Dict[Any, Any]]]:
         """
         Fetch a page - returns either BeautifulSoup (HTML) or Dict (JSON).
         
         Args:
             url: URL to fetch
             json_mode: If True, parse as JSON instead of HTML
+            custom_headers: Optional custom headers (for Reddit API, etc.)
             
         Returns:
             BeautifulSoup object, Dict, or None if request fails
         """
         if json_mode:
-            return self.fetch_json(url)
+            return self.fetch_json(url, custom_headers=custom_headers)
         return self.fetch_page(url)
     
     def close(self):

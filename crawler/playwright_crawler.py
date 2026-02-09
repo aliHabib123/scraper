@@ -73,13 +73,24 @@ class PlaywrightCrawler:
         self.playwright = sync_playwright().start()
         
         # Launch with args to avoid detection
+        launch_args = [
+            '--disable-blink-features=AutomationControlled',
+            '--no-sandbox',
+            '--disable-dev-shm-usage',
+        ]
+        
+        # If not headless, prevent focus stealing on macOS
+        if not headless:
+            launch_args.extend([
+                '--disable-popup-blocking',
+                '--disable-background-timer-throttling',
+                '--disable-backgrounding-occluded-windows',
+                '--disable-renderer-backgrounding',
+            ])
+        
         self.browser: Browser = self.playwright.chromium.launch(
             headless=headless,
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-            ]
+            args=launch_args
         )
         
         # Create context with realistic browser fingerprint

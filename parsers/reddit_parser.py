@@ -12,8 +12,17 @@ class RedditParser(BaseParser):
     
     def __init__(self):
         """Initialize Reddit parser."""
-        self.user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+        # Reddit API requires custom User-Agent format: <platform>:<app>:<version> (by /u/<username>)
+        # Generic browser User-Agents are blocked with 403
+        self.user_agent = "python:forum-scraper:v1.0 (by /u/ForumMonitor)"
         self.after_token = None  # Track pagination token
+    
+    def get_reddit_headers(self):
+        """Get Reddit-compliant headers."""
+        return {
+            'User-Agent': self.user_agent,
+            'Accept': 'application/json',
+        }
     
     def get_paginated_url(self, base_url: str, page_num: int) -> str:
         """

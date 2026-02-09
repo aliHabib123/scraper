@@ -130,7 +130,9 @@ class ForumCrawler:
                 # Fetch page (JSON for Reddit, HTML for others)
                 # For page 2+, use previous page as referer to look like navigation
                 if is_reddit:
-                    soup = self.crawler.fetch(page_url, json_mode=True)
+                    # Reddit requires custom User-Agent - get from parser
+                    reddit_headers = self.parser.get_reddit_headers() if hasattr(self.parser, 'get_reddit_headers') else None
+                    soup = self.crawler.fetch(page_url, json_mode=True, custom_headers=reddit_headers)
                 else:
                     referer = self.parser.get_paginated_url(start_url, page_num - 1) if page_num > 1 else None
                     soup = self.crawler.fetch_page(page_url, referer=referer)
@@ -181,7 +183,12 @@ class ForumCrawler:
             is_reddit = 'reddit.com' in thread_url
             
             # Fetch thread page (JSON for Reddit, HTML for others)
-            soup = self.crawler.fetch(thread_url + '.json' if is_reddit else thread_url, json_mode=is_reddit)
+            if is_reddit:
+                # Reddit requires custom User-Agent
+                reddit_headers = self.parser.get_reddit_headers() if hasattr(self.parser, 'get_reddit_headers') else None
+                soup = self.crawler.fetch(thread_url + '.json', json_mode=True, custom_headers=reddit_headers)
+            else:
+                soup = self.crawler.fetch(thread_url, json_mode=False)
             if not soup:
                 return matches
             
