@@ -18,7 +18,6 @@ KEYWORDS = [
     "Infinity Europ SARL",
     "Infinity Europ",
     "Europ SARL",
-    "Europ",
     "amorzee.com",
     "amorzee",
     
@@ -65,7 +64,6 @@ KEYWORDS = [
     
     # DI2 Sky Limited - globalsportplus.*
     "DI2 Sky",
-    "DI2",
     "globalsportplus.co.uk",
     "globalsportplus.com",
     "globalsportplus.net",
