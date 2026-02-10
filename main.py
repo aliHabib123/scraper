@@ -132,7 +132,7 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     is_bigwinboard = 'bigwinboard' in forum.name.lower()
     
     if is_reddit:
-        rate_limit = 7.0
+        rate_limit = 12.0  # Reddit aggressive rate limiting - slow down to avoid 403s
     elif is_casinomeister or is_ownedcore or is_moneysavingexpert or is_askgamblers or is_bigwinboard:
         rate_limit = 3.0  # Playwright/bot protection bypass or JS rendering
     else:
@@ -182,20 +182,24 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
     return stats
 
 
-def crawl_all_forums(session: Session, rate_limit: float = 2.0, notifier: TelegramNotifier = None) -> Dict[str, Dict]:
+def crawl_all_forums(session: Session, notifier: TelegramNotifier = None) -> Dict[str, Dict]:
     """
-    Crawl all enabled forums for all enabled keywords.
+    Crawl all enabled forums for all enabled keywords with automatic retry on rate limits.
+    
+    When a forum hits rate limits (e.g., Reddit 403), it moves to the next forum
+    and retries the blocked forum after all others are processed.
     
     Args:
         session: Database session
-        rate_limit: Seconds between requests
         notifier: Optional Telegram notifier
         
     Returns:
-        Dict with stats for each forum
+        Dict mapping forum names to crawl statistics
     """
-    # Fetch enabled forums and keywords
+    # Get all enabled forums
     forums = session.query(Forum).filter(Forum.enabled == True).all()
+    
+    # Get all enabled keywords
     keywords = session.query(Keyword).filter(Keyword.enabled == True).all()
     
     if not forums:
@@ -209,14 +213,62 @@ def crawl_all_forums(session: Session, rate_limit: float = 2.0, notifier: Telegr
     logger.info(f"Starting crawl: {len(forums)} forums, {len(keywords)} keywords")
     
     results = {}
+    failed_forums = []  # Forums that hit rate limits
+    max_retries = 2  # Maximum retry attempts per forum
+    retry_wait_minutes = 30  # Wait time before retrying rate-limited forums
     
+    # First pass: crawl all forums
     for forum in forums:
         try:
+            logger.info(f"Processing forum: {forum.name}")
             stats = crawl_forum(session, forum, keywords, notifier)
             results[forum.name] = stats
+            
+            # Check if forum hit rate limits (high error rate)
+            error_rate = stats.get('errors', 0) / max(stats.get('threads_found', 1), 1)
+            if error_rate > 0.5 and stats.get('errors', 0) > 10:
+                logger.warning(f"{forum.name} hit rate limits (error rate: {error_rate:.0%})")
+                failed_forums.append({'forum': forum, 'retry_count': 0})
         except Exception as e:
             logger.error(f"Error crawling {forum.name}: {str(e)}")
             results[forum.name] = {'matches_found': 0, 'pages_crawled': 0, 'errors': 1}
+    
+    # Retry pass: attempt rate-limited forums after waiting
+    if failed_forums:
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Detected {len(failed_forums)} forum(s) with rate limiting")
+        logger.info(f"Waiting {retry_wait_minutes} minutes before retry...")
+        logger.info(f"{'='*60}\n")
+        
+        import time
+        time.sleep(retry_wait_minutes * 60)  # Wait before retrying
+        
+        for item in failed_forums[:]:  # Copy list to allow modification
+            forum = item['forum']
+            retry_count = item['retry_count']
+            
+            if retry_count >= max_retries:
+                logger.warning(f"Skipping {forum.name} - max retries reached")
+                continue
+            
+            try:
+                logger.info(f"Retrying forum: {forum.name} (attempt {retry_count + 1}/{max_retries})")
+                stats = crawl_forum(session, forum, keywords, notifier)
+                
+                # Merge stats with previous results
+                prev_stats = results.get(forum.name, {})
+                results[forum.name] = {
+                    'matches_found': prev_stats.get('matches_found', 0) + stats.get('matches_found', 0),
+                    'pages_crawled': prev_stats.get('pages_crawled', 0) + stats.get('pages_crawled', 0),
+                    'threads_found': prev_stats.get('threads_found', 0) + stats.get('threads_found', 0),
+                    'errors': prev_stats.get('errors', 0) + stats.get('errors', 0),
+                }
+                
+                logger.info(f"✓ Successfully retried {forum.name}")
+                failed_forums.remove(item)
+            except Exception as e:
+                logger.error(f"Retry failed for {forum.name}: {str(e)}")
+                item['retry_count'] += 1
     
     return results
 
@@ -282,7 +334,7 @@ def main():
         SessionMaker = get_session_maker()
         session = SessionMaker()
         
-        results = crawl_all_forums(session, rate_limit=args.rate_limit, notifier=notifier)
+        results = crawl_all_forums(session, notifier=notifier)
         print_summary(results)
         
         session.close()

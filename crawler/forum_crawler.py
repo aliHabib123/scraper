@@ -118,6 +118,8 @@ class ForumCrawler:
         """
         thread_urls = []
         pages_crawled = 0
+        consecutive_failures = 0
+        max_consecutive_failures = 3  # Stop early if rate-limited
         
         # Detect if this is Reddit (JSON API)
         is_reddit = 'reddit.com' in start_url
@@ -139,7 +141,14 @@ class ForumCrawler:
                 
                 if not soup:
                     logger.warning(f"Failed to fetch category page: {page_url}")
-                    break
+                    consecutive_failures += 1
+                    if consecutive_failures >= max_consecutive_failures:
+                        logger.warning(f"Stopping early - {consecutive_failures} consecutive failures (likely rate-limited)")
+                        break
+                    continue
+                
+                # Reset failure counter on success
+                consecutive_failures = 0
                 
                 # Extract thread URLs
                 urls = self.parser.extract_thread_urls(soup, start_url)
@@ -160,7 +169,10 @@ class ForumCrawler:
                 
             except Exception as e:
                 logger.error(f"Error crawling category page {page_num}: {str(e)}")
-                break
+                consecutive_failures += 1
+                if consecutive_failures >= max_consecutive_failures:
+                    logger.warning(f"Stopping early - {consecutive_failures} consecutive failures (likely rate-limited)")
+                    break
         
         return thread_urls, pages_crawled
     

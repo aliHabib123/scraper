@@ -123,8 +123,11 @@ class BaseCrawler:
             try:
                 logger.info(f"Fetching: {url}")
                 
-                # Use custom headers if provided (for Reddit API requirements)
-                headers = custom_headers if custom_headers else {}
+                # Merge custom headers with client's default headers
+                # Custom headers will override defaults (important for Reddit User-Agent)
+                headers = dict(self.client.headers)
+                if custom_headers:
+                    headers.update(custom_headers)
                 
                 response = self.client.get(url, headers=headers)
                 response.raise_for_status()

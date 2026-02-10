@@ -73,6 +73,11 @@ class AskGamblersParser(BaseParser):
                 # Remove query parameters and fragments for deduplication
                 clean_url = full_url.split('?')[0].split('#')[0]
                 
+                # Remove /page/N/ suffix to get base thread URL (avoid scraping random pages)
+                # Example: /topic/123/page/23/ -> /topic/123/
+                import re
+                clean_url = re.sub(r'/page/\d+/?$', '', clean_url)
+                
                 if clean_url not in seen:
                     seen.add(clean_url)
                     thread_urls.append(clean_url)
