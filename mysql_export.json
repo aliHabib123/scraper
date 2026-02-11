@@ -1,0 +1,827 @@
+{
+  "export_date": "2026-02-11T10:53:04.317829",
+  "database_type": "mysql",
+  "forums": [
+    {
+      "id": 1,
+      "name": "casino.guru",
+      "base_url": "https://casino.guru",
+      "type": "category",
+      "start_urls": [
+        "https://casino.guru/forum/casinos",
+        "https://casino.guru/forum/bonuses-and-promotions",
+        "https://casino.guru/forum/complaints-discussion",
+        "https://casino.guru/forum/general-gambling-discussion"
+      ],
+      "pagination_type": "page_number",
+      "max_pages": 1,
+      "enabled": false,
+      "created_at": "2026-01-02T09:40:00",
+      "updated_at": "2026-01-09T08:58:21"
+    },
+    {
+      "id": 2,
+      "name": "bitcointalk",
+      "base_url": "https://bitcointalk.org",
+      "type": "category",
+      "start_urls": [
+        "https://bitcointalk.org/index.php?board=56.0"
+      ],
+      "pagination_type": "page_number",
+      "max_pages": 1,
+      "enabled": false,
+      "created_at": "2026-01-06T16:29:30",
+      "updated_at": "2026-01-09T09:58:33"
+    },
+    {
+      "id": 8,
+      "name": "reddit",
+      "base_url": "https://www.reddit.com",
+      "type": "category",
+      "start_urls": [
+        "https://www.reddit.com/r/casino",
+        "https://www.reddit.com/r/gambling",
+        "https://www.reddit.com/r/onlinegambling",
+        "https://www.reddit.com/r/slots",
+        "https://www.reddit.com/r/blackjack",
+        "https://www.reddit.com/r/poker",
+        "https://www.reddit.com/r/pokerstrategy"
+      ],
+      "pagination_type": "reddit_after",
+      "max_pages": 1,
+      "enabled": false,
+      "created_at": "2026-01-07T22:04:57",
+      "updated_at": "2026-01-09T09:49:32"
+    },
+    {
+      "id": 10,
+      "name": "askgamblers",
+      "base_url": "https://forum.askgamblers.com/",
+      "type": "category",
+      "start_urls": [
+        "https://forum.askgamblers.com/forum/21-online-slot-discussions/",
+        "https://forum.askgamblers.com/forum/9-sports-betting-general-discussions/",
+        "https://forum.askgamblers.com/forum/40-casino-rep-corner/"
+      ],
+      "pagination_type": "page_number",
+      "max_pages": 1,
+      "enabled": false,
+      "created_at": "2026-01-09T10:23:01",
+      "updated_at": "2026-02-02T11:24:58"
+    },
+    {
+      "id": 11,
+      "name": "bigwinboard.com",
+      "base_url": "https://www.bigwinboard.com",
+      "type": "category",
+      "start_urls": [
+        "https://www.bigwinboard.com/forum/casino-complaints/"
+      ],
+      "pagination_type": "page_number",
+      "max_pages": 1,
+      "enabled": false,
+      "created_at": "2026-02-02T11:23:50",
+      "updated_at": "2026-02-04T11:48:34"
+    },
+    {
+      "id": 12,
+      "name": "casinomeister.com",
+      "base_url": "https://www.casinomeister.com",
+      "type": "category",
+      "start_urls": [
+        "https://www.casinomeister.com/forums/community/casinomeister-complaints-notes.508/",
+        "https://www.casinomeister.com/forums/community/casino-complaints-non-bonus-issues/",
+        "https://www.casinomeister.com/forums/community/casino-complaints-bonus-issues/",
+        "https://www.casinomeister.com/forums/community/source-of-wealth-issues.438/",
+        "https://www.casinomeister.com/forums/community/self-exclusion-responsible-gambling-complaints.347/",
+        "https://www.casinomeister.com/forums/community/payment-processing-issues/",
+        "https://www.casinomeister.com/forums/community/1668-jaz-licensee-issues.411/",
+        "https://www.casinomeister.com/forums/community/virtual-group-issues.428/",
+        "https://www.casinomeister.com/forums/community/sportsbook-complaints/",
+        "https://www.casinomeister.com/forums/community/poker-complaints/",
+        "https://www.casinomeister.com/forums/community/casino-spam-complaints/",
+        "https://www.casinomeister.com/forums/community/other-complaints/"
+      ],
+      "pagination_type": "page_number",
+      "max_pages": 1,
+      "enabled": false,
+      "created_at": "2026-02-04T11:48:04",
+      "updated_at": "2026-02-05T10:18:27"
+    },
+    {
+      "id": 13,
+      "name": "ownedcore.com",
+      "base_url": "https://www.ownedcore.com",
+      "type": "category",
+      "start_urls": [
+        "https://www.ownedcore.com/forums/gambling/"
+      ],
+      "pagination_type": "custom",
+      "max_pages": 1,
+      "enabled": false,
+      "created_at": "2026-02-05T10:16:32",
+      "updated_at": "2026-02-05T22:48:32"
+    },
+    {
+      "id": 14,
+      "name": "moneysavingexpert.com",
+      "base_url": "https://forums.moneysavingexpert.com",
+      "type": "category",
+      "start_urls": [
+        "https://forums.moneysavingexpert.com/discussions"
+      ],
+      "pagination_type": "page_number",
+      "max_pages": 1,
+      "enabled": true,
+      "created_at": "2026-02-05T22:48:10",
+      "updated_at": null
+    }
+  ],
+  "keywords": [
+    {
+      "id": 127,
+      "keyword": "Infinity Europ SARL",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 128,
+      "keyword": "Infinity Europ",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 129,
+      "keyword": "Europ SARL",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 130,
+      "keyword": "amorzee.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 131,
+      "keyword": "amorzee",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 132,
+      "keyword": "Ennestrad Service",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 133,
+      "keyword": "Ennestrad",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 134,
+      "keyword": "articlealchemy.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 135,
+      "keyword": "articlealchemy",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 136,
+      "keyword": "shorevida.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 137,
+      "keyword": "shorevida",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 138,
+      "keyword": "XALTRONIS LIMITED",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 139,
+      "keyword": "XALTRONIS",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 140,
+      "keyword": "Cloud2phone.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 141,
+      "keyword": "cloud2phone",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 142,
+      "keyword": "Jagmoth Digital",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 143,
+      "keyword": "Jagmoth",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 144,
+      "keyword": "contentmagiconline.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 145,
+      "keyword": "contentmagiconline",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 146,
+      "keyword": "CiBC Company",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 147,
+      "keyword": "CiBC",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 148,
+      "keyword": "digikeyboard.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 149,
+      "keyword": "digikeyboard",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 150,
+      "keyword": "digitalkeyboard.co.uk",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 151,
+      "keyword": "digitalkeyboard.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 152,
+      "keyword": "digitalkeyboard",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 153,
+      "keyword": "Karlov International",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 154,
+      "keyword": "Karlov",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 155,
+      "keyword": "e-content4u.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 156,
+      "keyword": "e-content4u",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 157,
+      "keyword": "Nalvirox Tech",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 158,
+      "keyword": "Nalvirox",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 159,
+      "keyword": "gearovo.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 160,
+      "keyword": "gearovo",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 161,
+      "keyword": "DI2 Sky",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 162,
+      "keyword": "globalsportplus.co.uk",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 163,
+      "keyword": "globalsportplus.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 164,
+      "keyword": "globalsportplus.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 165,
+      "keyword": "globalsportplus.org",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 166,
+      "keyword": "globalsportplus",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 167,
+      "keyword": "BIVOLIX GLOBAL",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 168,
+      "keyword": "BIVOLIX",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 169,
+      "keyword": "golfinex.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 170,
+      "keyword": "golfinex",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 171,
+      "keyword": "Krivon Global",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 172,
+      "keyword": "Krivon",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 173,
+      "keyword": "brightspacia.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 174,
+      "keyword": "brightspacia",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 175,
+      "keyword": "EchoSpark",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 176,
+      "keyword": "dartstation.shop",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 177,
+      "keyword": "dartstation",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 178,
+      "keyword": "Inventia",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 179,
+      "keyword": "easyfitplanner.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 180,
+      "keyword": "easyfitplanner",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 181,
+      "keyword": "Panther Retail",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 182,
+      "keyword": "Panther",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 183,
+      "keyword": "knockoutco.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 184,
+      "keyword": "knockoutco",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 185,
+      "keyword": "Boros Agency",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 186,
+      "keyword": "Boros",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 187,
+      "keyword": "poolnation.store",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 188,
+      "keyword": "poolnation",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 189,
+      "keyword": "scriptgpt.online",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 190,
+      "keyword": "scriptgpt",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 191,
+      "keyword": "Anivela",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 192,
+      "keyword": "primekickz.shop",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 193,
+      "keyword": "primekickz",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 194,
+      "keyword": "Vista Content",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 195,
+      "keyword": "Vista",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 196,
+      "keyword": "provollyworld.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 197,
+      "keyword": "provollyworld",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 198,
+      "keyword": "Codemania",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 199,
+      "keyword": "upskillbridge.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 200,
+      "keyword": "upskillbridge",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 201,
+      "keyword": "Yaffimayah Vision",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 202,
+      "keyword": "Yaffimayah",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 203,
+      "keyword": "onlinecontenthub.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 204,
+      "keyword": "onlinecontenthub",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 205,
+      "keyword": "Typhon",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 206,
+      "keyword": "puresounds.cloud",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 207,
+      "keyword": "puresounds",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 208,
+      "keyword": "Astronix Group",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 209,
+      "keyword": "Astronix",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 210,
+      "keyword": "skillcrafters.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 211,
+      "keyword": "skillcrafters",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 212,
+      "keyword": "Slavin Technology",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 213,
+      "keyword": "Slavin",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 214,
+      "keyword": "snookerhallsupplies.com",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 215,
+      "keyword": "snookerhallsupplies",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 216,
+      "keyword": "Mastar General",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 217,
+      "keyword": "Mastar",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 218,
+      "keyword": "wallvibe.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 219,
+      "keyword": "wallvibe",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 220,
+      "keyword": "Artavena Virtual",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 221,
+      "keyword": "Artavena",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 222,
+      "keyword": "writemycontent.net",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    },
+    {
+      "id": 223,
+      "keyword": "writemycontent",
+      "enabled": true,
+      "created_at": "2026-02-10T13:55:42",
+      "updated_at": null
+    }
+  ],
+  "matches": [],
+  "counts": {
+    "forums": 8,
+    "keywords": 97,
+    "matches": 0
+  }
+}
