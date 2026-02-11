@@ -17,7 +17,7 @@ from sqlalchemy.orm import Session
 from models import Forum, Keyword
 from models.base import get_session_maker, init_db
 from crawler import ForumCrawler
-from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser, AskGamblersParser, BigWinBoardParser, XenForoParser, OwnedCoreParser, MoneySavingExpertParser
+from parsers import CasinoGuruParser, BitcoinTalkParser, RedditParser, AskGamblersParser, BigWinBoardParser, XenForoParser, OwnedCoreParser, MoneySavingExpertParser, LCBParser
 from notifier import TelegramNotifier
 
 # Configure logging
@@ -89,6 +89,8 @@ def get_parser_for_forum(forum_name: str):
         'ownedcore.com': OwnedCoreParser,
         'moneysavingexpert': MoneySavingExpertParser,
         'moneysavingexpert.com': MoneySavingExpertParser,
+        'lcb.org': LCBParser,
+        'lcb': LCBParser,
     }
     
     parser_class = parsers.get(forum_name.lower())
