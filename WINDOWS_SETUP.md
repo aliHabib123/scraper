@@ -227,49 +227,111 @@ Total threads: 85
 
 ## 8. Set Up Automated Scheduling
 
-### Using Windows Task Scheduler
+### Option A: Windows Task Scheduler (Recommended)
 
-#### Create Scheduled Task
+#### Open Task Scheduler
 
-1. Open **Task Scheduler** (search in Start menu)
-2. Click **"Create Basic Task"**
-3. Configure:
+1. Press `Win + R`
+2. Type: `taskschd.msc`
+3. Press Enter
+
+#### Create Basic Task
+
+1. Click **"Create Basic Task"** (right sidebar)
+2. Name: `Forum Scraper`
+3. Description: `Automated forum monitoring for keywords`
+4. Click **"Next"**
+
+#### Set Trigger
+
+1. Select: **"Daily"**
+2. Click **"Next"**
+3. Start time: Choose when to run (e.g., `8:00 AM`)
+4. Recur every: `1 days`
+5. Click **"Next"**
+
+#### Set Action
+
+1. Select: **"Start a program"**
+2. Click **"Next"**
+3. Configure program:
+   - **Program/script:** 
+     ```
+     C:\Users\YourName\Desktop\scraper\scraper\venv\Scripts\python.exe
+     ```
+     *(Replace `YourName` with your actual username)*
+   
+   - **Add arguments:**
+     ```
+     main.py
+     ```
+   
+   - **Start in:**
+     ```
+     C:\Users\YourName\Desktop\scraper\scraper
+     ```
+     *(Replace `YourName` with your actual username)*
+
+4. Click **"Next"** then **"Finish"**
+
+#### Configure Advanced Settings
+
+1. Find your task in Task Scheduler Library
+2. Right-click → **"Properties"**
 
    **General Tab:**
-   - Name: `Forum Scraper`
-   - Description: `Automated forum monitoring for keywords`
-   - Run whether user is logged on or not: ✅
+   - ✅ "Run whether user is logged on or not"
+   - Select: "Run with highest privileges" (optional)
 
    **Triggers Tab:**
-   - Click **"New"**
-   - Begin: `On a schedule`
-   - Settings: `Daily`
-   - Recur every: `1 days`
-   - Repeat task every: `6 hours`
-   - Duration: `1 day`
-
-   **Actions Tab:**
-   - Click **"New"**
-   - Action: `Start a program`
-   - Program/script: `C:\Users\YourName\scraper\venv\Scripts\python.exe`
-   - Add arguments: `main.py`
-   - Start in: `C:\Users\YourName\scraper`
+   - Click **"Edit"**
+   - Check: ✅ "Repeat task every: **6 hours**"
+   - For duration of: **1 day**
+   - ✅ "Enabled"
+   - Click **"OK"**
 
    **Conditions Tab:**
-   - Uncheck: ❌ "Start the task only if the computer is on AC power"
+   - ❌ Uncheck "Start the task only if the computer is on AC power"
 
    **Settings Tab:**
    - ✅ "Allow task to be run on demand"
    - ✅ "Run task as soon as possible after a scheduled start is missed"
-   - If running task does not end when requested: `Stop the existing instance`
+   - ✅ "If the task fails, restart every: **10 minutes**"
+   - Attempt to restart up to: **3 times**
+   - If running task does not end when requested: "Stop the existing instance"
 
-4. Click **"OK"** to save
+3. Click **"OK"**
+4. Enter your Windows password if prompted
 
 #### Test the Scheduled Task
 
-1. Right-click on your task
+1. Right-click on your task in Task Scheduler
 2. Click **"Run"**
-3. Check the logs or Telegram for results
+3. Check `crawler.log` file or Telegram for results
+4. Verify task ran successfully in "Last Run Result" column
+
+---
+
+### Option B: Simple Batch Script
+
+Create a file named `run_scraper.bat` in your project folder:
+
+```batch
+@echo off
+cd C:\Users\YourName\Desktop\scraper\scraper
+call venv\Scripts\activate
+python main.py
+pause
+```
+
+**To use:**
+- Double-click `run_scraper.bat` to run manually
+- Or schedule this `.bat` file in Task Scheduler instead of python.exe
+
+**Benefits:**
+- Easier to test (just double-click)
+- Shows output window
+- Can see errors immediately
 
 ---
 
