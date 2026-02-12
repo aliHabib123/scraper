@@ -113,9 +113,26 @@ DATABASE_URL=sqlite:///scraper.db
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 
+# LCB.org Extraction Mode
+# 'comprehensive' (default): Extract all thread links including sidebar/widgets (slower, more thorough)
+# 'targeted': Extract only main thread list (faster, less coverage)
+LCB_EXTRACTION_MODE=comprehensive
+
 # Playwright Browser Settings
+# Set to 'false' to see browser window during scraping (useful for debugging)
+# Set to 'true' for headless mode (default, recommended for automation)
 PLAYWRIGHT_HEADLESS=true
 ```
+
+**Configuration Options:**
+
+- **LCB_EXTRACTION_MODE:**
+  - `comprehensive` (default): Extracts ~100+ threads per page including sidebar links, trending topics, and news. More thorough but slower (3-4 hours for full crawl).
+  - `targeted`: Extracts only main thread list (~40 threads per page). Faster (1-2 hours) but may miss some trending/popular threads.
+
+- **PLAYWRIGHT_HEADLESS:**
+  - `true` (default): Browser runs in background (invisible)
+  - `false`: Shows browser window (useful for debugging)
 
 ### How to Get Telegram Chat ID
 

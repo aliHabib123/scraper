@@ -2,6 +2,7 @@ from typing import List, Dict, Optional
 from urllib.parse import urljoin, urlparse
 from bs4 import BeautifulSoup
 import logging
+import os
 
 from .base_parser import BaseParser
 
@@ -33,6 +34,10 @@ class LCBParser(BaseParser):
         Extract thread URLs from LCB.org category page.
         
         LCB.org uses links like: /onlinecasinobonusforum/casinos/topic-slug-id
+        
+        Extraction mode controlled by LCB_EXTRACTION_MODE environment variable:
+        - 'comprehensive' (default): Extract all thread links including sidebar/widgets
+        - 'targeted': Extract only main thread list, faster but less coverage
         """
         thread_urls = []
         
@@ -40,9 +45,25 @@ class LCBParser(BaseParser):
         parsed = urlparse(base_url)
         base_domain = f"{parsed.scheme}://{parsed.netloc}"
         
-        # Find all links in the forum
-        # LCB uses structure: /onlinecasinobonusforum/category/topic-name-id
-        all_links = soup.find_all('a', href=True)
+        # Get extraction mode from environment variable
+        extraction_mode = os.getenv('LCB_EXTRACTION_MODE', 'comprehensive').lower()
+        
+        # Find all links based on extraction mode
+        if extraction_mode == 'targeted':
+            # Targeted mode: Only extract from main content area
+            # Look for common thread list container selectors
+            main_content = soup.select_one('.forum-topics, .topic-list, .forum-list, main, .main-content, #content')
+            if main_content:
+                all_links = main_content.find_all('a', href=True)
+                logger.debug(f"LCB targeted mode: searching in main content container")
+            else:
+                # Fallback to all links if container not found
+                all_links = soup.find_all('a', href=True)
+                logger.debug(f"LCB targeted mode: main container not found, using all links")
+        else:
+            # Comprehensive mode: Extract from entire page
+            all_links = soup.find_all('a', href=True)
+            logger.debug(f"LCB comprehensive mode: searching all page links")
         
         # Filter thread links
         seen = set()
