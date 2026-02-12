@@ -346,7 +346,7 @@ class PlaywrightCrawler:
         Returns:
             True if warm-up successful, False otherwise
         """
-        logger.info(f"🔥 Advanced IP warm-up for aggressive Cloudflare: {base_url}")
+        logger.info(f"Advanced IP warm-up for aggressive Cloudflare: {base_url}")
         
         try:
             # Step 1: Visit homepage
