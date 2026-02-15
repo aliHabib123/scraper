@@ -50,20 +50,26 @@ class LCBParser(BaseParser):
         
         # Find all links based on extraction mode
         if extraction_mode == 'targeted':
-            # Targeted mode: Only extract from main content area
-            # Look for common thread list container selectors
-            main_content = soup.select_one('.forum-topics, .topic-list, .forum-list, main, .main-content, #content')
+            # Targeted mode: Only extract from main thread list
+            # LCB.org uses <ul id="all-topics" class="all-topics"> for the main thread list
+            main_content = soup.select_one('#all-topics, .all-topics')
             if main_content:
                 all_links = main_content.find_all('a', href=True)
-                logger.debug(f"LCB targeted mode: searching in main content container")
+                logger.debug(f"LCB targeted mode: found #all-topics container with {len(all_links)} links")
             else:
-                # Fallback to all links if container not found
-                all_links = soup.find_all('a', href=True)
-                logger.debug(f"LCB targeted mode: main container not found, using all links")
+                # Fallback: try to find main content column
+                main_content = soup.select_one('.col-12.col-xl-9, .main-content')
+                if main_content:
+                    all_links = main_content.find_all('a', href=True)
+                    logger.debug(f"LCB targeted mode: using main content column with {len(all_links)} links")
+                else:
+                    # Last resort: use all links
+                    all_links = soup.find_all('a', href=True)
+                    logger.debug(f"LCB targeted mode: container not found, using all {len(all_links)} links")
         else:
-            # Comprehensive mode: Extract from entire page
+            # Comprehensive mode: Extract from entire page (includes sidebars, widgets, etc.)
             all_links = soup.find_all('a', href=True)
-            logger.debug(f"LCB comprehensive mode: searching all page links")
+            logger.debug(f"LCB comprehensive mode: searching all {len(all_links)} page links")
         
         # Filter thread links
         seen = set()
