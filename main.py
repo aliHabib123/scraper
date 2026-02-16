@@ -328,6 +328,15 @@ def main():
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
     
+    # Clean up Playwright state file from previous runs
+    state_file = 'playwright_state.json'
+    if os.path.exists(state_file):
+        try:
+            os.remove(state_file)
+            logger.info(f"Deleted old Playwright state file: {state_file}")
+        except Exception as e:
+            logger.warning(f"Failed to delete Playwright state file: {e}")
+    
     # Initialize Telegram notifier
     notifier = None if args.no_telegram else TelegramNotifier()
     

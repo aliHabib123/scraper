@@ -50,12 +50,19 @@ class LCBParser(BaseParser):
         
         # Find all links based on extraction mode
         if extraction_mode == 'targeted':
-            # Targeted mode: Only extract from main thread list
-            # LCB.org uses <ul id="all-topics" class="all-topics"> for the main thread list
+            # Targeted mode: Only extract main thread title links
+            # LCB.org structure: <ul id="all-topics"><li class="full-row"><div class="topic-author-name"><a>Thread Title</a>
             main_content = soup.select_one('#all-topics, .all-topics')
             if main_content:
-                all_links = main_content.find_all('a', href=True)
-                logger.debug(f"LCB targeted mode: found #all-topics container with {len(all_links)} links")
+                # Extract only the main thread title link from each row
+                # Each row has multiple links (title, last post, users), we want only the title
+                all_links = main_content.select('.topic-author-name > a:first-of-type')
+                if all_links:
+                    logger.debug(f"LCB targeted mode: found {len(all_links)} thread title links in #all-topics")
+                else:
+                    # Fallback: get all links in topic-info if selector fails
+                    all_links = main_content.select('.topic-info a')
+                    logger.debug(f"LCB targeted mode: using .topic-info links ({len(all_links)} found)")
             else:
                 # Fallback: try to find main content column
                 main_content = soup.select_one('.col-12.col-xl-9, .main-content')
