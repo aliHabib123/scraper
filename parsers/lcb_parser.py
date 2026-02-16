@@ -202,14 +202,16 @@ class LCBParser(BaseParser):
         # Find post elements
         post_elements = []
         
+        # LCB.org uses <li class="full-row" id="msg123456"> for each post
         post_selectors = [
+            'li[id^="msg"]',  # LCB.org specific: <li id="msg387659">
+            '[id^="msg"]',    # Fallback: any element with id starting with "msg"
+            '.post-message',  # LCB.org post content container
             '.post',
             '.message',
             '.comment',
             '.forum-post',
             'article.post',
-            'div[class*="post"]',
-            'div[class*="message"]',
         ]
         
         for selector in post_selectors:
