@@ -32,6 +32,14 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+# Configure separate logger for match results
+matches_logger = logging.getLogger('matches')
+matches_logger.setLevel(logging.INFO)
+matches_handler = logging.FileHandler('matches.log')
+matches_handler.setFormatter(logging.Formatter('%(asctime)s - %(message)s'))
+matches_logger.addHandler(matches_handler)
+matches_logger.propagate = False  # Don't propagate to root logger (avoid duplicate in crawler.log)
+
 
 def get_cookies_for_forum(forum_name: str) -> Optional[Dict[str, str]]:
     """
@@ -172,6 +180,19 @@ def crawl_forum(session: Session, forum: Forum, keywords: List[Keyword], notifie
         Match.forum_id == forum.id,
         Match.keyword_id.in_([k.id for k in keywords])
     ).all()
+    
+    # Log match results to separate matches.log file
+    matches_count = stats['matches_found']
+    pages = stats.get('pages_crawled', 0)
+    
+    if matches_count > 0:
+        matches_logger.info(f"⚠️⚠️⚠️⚠️ MATCHES FOUND - Forum: {forum.name}, Pages: {pages}, Matches: {matches_count}")
+        # Log each match detail
+        for m in matches[-matches_count:]:
+            matches_logger.info(f"  → Keyword: '{m.keyword.keyword}' | URL: {m.page_url}")
+            matches_logger.info(f"     Snippet: {m.snippet[:200]}...")
+    else:
+        matches_logger.info(f"✅ NO MATCHES - Forum: {forum.name}, Pages: {pages}")
     
     # Send consolidated notification with matches and summary
     if notifier:
