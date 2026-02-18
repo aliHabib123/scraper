@@ -19,6 +19,7 @@ class TelegramNotifier:
         self.bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
         self.chat_id = os.getenv('TELEGRAM_CHAT_ID')
         self.enabled = bool(self.bot_token and self.chat_id)
+        self.notify_only_on_matches = os.getenv('NOTIFY_ONLY_ON_MATCHES', 'false').lower() == 'true'
         
         if not self.enabled:
             logger.warning("Telegram notifications disabled - missing credentials")
@@ -73,7 +74,7 @@ class TelegramNotifier:
             return False
         
         # Build message
-        message = f"🔍 <b>New Matches Found</b>\n\n"
+        message = f"⚠️⚠️⚠️⚠️ <b>New Matches Found</b>\n\n"
         message += f"<b>Forum:</b> {forum_name}\n"
         message += f"<b>Matches:</b> {len(matches)}\n\n"
         
@@ -105,9 +106,14 @@ class TelegramNotifier:
         matches_count = stats.get('matches_found', 0)
         errors = stats.get('errors', 0)
         
+        # Skip notification if no matches and NOTIFY_ONLY_ON_MATCHES is enabled
+        if matches_count == 0 and self.notify_only_on_matches:
+            logger.info(f"Skipping notification for {forum_name} - no matches found (NOTIFY_ONLY_ON_MATCHES=true)")
+            return False
+        
         # Build header
         if matches_count > 0:
-            message = f"🔍 <b>Crawl Complete - {matches_count} Match{'es' if matches_count > 1 else ''} Found</b>\n\n"
+            message = f"⚠️⚠️⚠️⚠️ <b>Crawl Complete - {matches_count} Match{'es' if matches_count > 1 else ''} Found</b>\n\n"
         else:
             message = f"✅ <b>Crawl Complete - No Matches</b>\n\n"
         

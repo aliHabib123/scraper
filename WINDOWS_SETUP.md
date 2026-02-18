@@ -113,6 +113,10 @@ DATABASE_URL=sqlite:///scraper.db
 TELEGRAM_BOT_TOKEN=your_bot_token_here
 TELEGRAM_CHAT_ID=your_chat_id_here
 
+# Only send notifications when matches are found (suppress no-match notifications)
+# Set to 'true' to only get notified about matches, 'false' to get all crawl results
+NOTIFY_ONLY_ON_MATCHES=false
+
 # LCB.org Extraction Mode
 # 'comprehensive' (default): Extract all thread links including sidebar/widgets (slower, more thorough)
 # 'targeted': Extract only main thread list (faster, less coverage)
@@ -125,6 +129,10 @@ PLAYWRIGHT_HEADLESS=true
 ```
 
 **Configuration Options:**
+
+- **NOTIFY_ONLY_ON_MATCHES:**
+  - `false` (default): Send notifications for all crawl results (matches or no matches)
+  - `true`: Only send notifications when matches are found (suppresses "No Matches" notifications)
 
 - **LCB_EXTRACTION_MODE:**
   - `comprehensive` (default): Extracts ~100+ threads per page including sidebar links, trending topics, and news. More thorough but slower (3-4 hours for full crawl).
